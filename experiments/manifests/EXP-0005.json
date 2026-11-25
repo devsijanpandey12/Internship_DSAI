@@ -1,0 +1,120 @@
+{
+  "experiment_id": "EXP-0005",
+  "timestamp_utc": "2026-11-25T20:54:27.319089+00:00",
+  "status": "SUCCESS",
+  "failure_reason": "",
+  "phase": "Phase 3/4 - Core-Pinned Latency-Budget Calibration (Quiesced Zero-Carryover)",
+  "hypothesis_id": "H0b",
+  "objective": "Complete 18-trial (N=3 seeds x 6 compute budgets) core-pinned synchronous compute-budget calibration at 250 pps spoofed table-miss load (~500 Packet-In/s), adding post-saturation controller queue-drain quiescence before OpenFlow cookie=0x10 flow flushing so saturated trials (2.0 ms, 4.0 ms) complete cleanly with zero cross-trial carryover.",
+  "git": {
+    "commit": "79d4d56807bb490bec9876cc131ccdeb62edc1d6",
+    "dirty": false
+  },
+  "config_path": "configs/exp0005_latency_budget.yaml",
+  "config_sha256": "15c131e7f1c94e3b0e4bd3d4982f4b3d4091c0b539b9e1b93ab9cfc3495b6f24",
+  "config": {
+    "experiment_id": "EXP-0005",
+    "hypothesis_id": "H0b",
+    "phase": "Phase 3/4 - Core-Pinned Latency-Budget Calibration (Quiesced Zero-Carryover)",
+    "objective": "Complete 18-trial (N=3 seeds x 6 compute budgets) core-pinned synchronous compute-budget calibration at 250 pps spoofed table-miss load (~500 Packet-In/s), adding post-saturation controller queue-drain quiescence before OpenFlow cookie=0x10 flow flushing so saturated trials (2.0 ms, 4.0 ms) complete cleanly with zero cross-trial carryover.\n",
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "cpu_pinning": {
+      "enabled": true,
+      "controller_cores": "0",
+      "generator_cores": "1",
+      "ovs_cores": "2-7"
+    },
+    "topology": {
+      "name": "minimal_two_switch",
+      "openflow_version": "OpenFlow13",
+      "flow_table_limit": 4096,
+      "overflow_policy": "refuse",
+      "flow_idle_timeout_s": 15,
+      "flow_hard_timeout_s": 30
+    },
+    "controller": {
+      "host": "127.0.0.1",
+      "ofp_port": 6653,
+      "telemetry_port": 18080,
+      "match_mode": "5tuple",
+      "heartbeat_interval_ms": 50
+    },
+    "benign_traffic": {
+      "iperf3_protocol": "udp",
+      "iperf3_bitrate_mbps": 20,
+      "ping_interval_s": 0.2,
+      "new_flow_probe_hz": 2.0,
+      "new_flow_timeout_s": 2.0,
+      "echo_port": 8088
+    },
+    "calibration_sweep": {
+      "fixed_spoof_pps": 250,
+      "inject_cpu_ms_levels": [
+        0.0,
+        0.25,
+        0.5,
+        1.0,
+        2.0,
+        4.0
+      ],
+      "duration_s": 10.0,
+      "cooldown_s": 2.0,
+      "payload_bytes": 64,
+      "dst_port": 9999
+    },
+    "telemetry": {
+      "sample_interval_s": 0.5
+    }
+  },
+  "cpu_pinning_applied": {
+    "controller": true,
+    "ovs_vswitchd": true
+  },
+  "topology_runtime": {
+    "ovs_datapath": "user",
+    "flow_table_limit": 4096,
+    "overflow_policy": "refuse",
+    "openflow_version": "OpenFlow13",
+    "switches": [
+      "s1",
+      "s2"
+    ],
+    "hosts": {
+      "h_benign": {
+        "ip": "10.0.0.1/24",
+        "mac": "00:00:00:00:00:01"
+      },
+      "h_attacker": {
+        "ip": "10.0.0.2/24",
+        "mac": "00:00:00:00:00:02"
+      },
+      "h_server": {
+        "ip": "10.0.0.3/24",
+        "mac": "00:00:00:00:00:03"
+      }
+    }
+  },
+  "environment": {
+    "timestamp_utc": "2026-11-25T20:54:27.319089+00:00",
+    "platform": "Linux-5.15.153.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "kernel_release": "5.15.153.1-microsoft-standard-WSL2",
+    "machine": "x86_64",
+    "python_version": "3.10.12",
+    "cpu_count_logical": 16,
+    "ovs_version": "ovs-vsctl (Open vSwitch) 2.17.12",
+    "ovs_datapath_mode": "netdev",
+    "mininet_version": "2.3.0",
+    "os_ken_version": "2.11.0"
+  },
+  "pre_test_connectivity_loss_pct": 0.0,
+  "result_summary": "0ms->4ms (@250pps, N=3): ctrl_pi=475.487->215.907pps, ctrl_cpu=29.607->97.58%, lag_p95=1.034->24.939ms, new_flow_ok=100.0->16.67%",
+  "limitations": [
+    "Synthetic busy-wait models pure synchronous Python CPU cost without memory/cache footprint of real models (real feature extraction + ML profiled next in Phase 4).",
+    "OVS datapath mode: netdev userspace (isolated from controller via taskset core pinning).",
+    "Stock WSL2 kernel lacks sch_htb/sch_netem."
+  ]
+}
