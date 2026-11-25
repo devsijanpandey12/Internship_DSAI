@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ku-dsai-sdn-bottleneck"
+version = "0.1.0"
+description = "Empirical investigation of live SDN controller bottlenecks and lightweight AI intrusion detection (KU DSAI Lab)"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Sijan Panday" },
+  { name = "Co-Researcher" }
+]
+dependencies = [
+  "numpy>=1.26.0,<2.3.0",
+  "pandas>=2.1.0,<3.0.0",
+  "pyyaml>=6.0.1",
+  "psutil>=5.9.8",
+  "scipy>=1.11.0",
+]
+
+[project.optional-dependencies]
+sdn = [
+  "os-ken>=2.11.0",
+  "eventlet>=0.35.2,<0.37.0",
+  "scapy>=2.5.0",
+]
+ml = [
+  "scikit-learn>=1.4.0",
+  "xgboost>=2.0.0",
+  "lightgbm>=4.3.0",
+  "torch>=2.2.0",
+  "matplotlib>=3.8.0",
+  "seaborn>=0.13.0",
+]
+dev = [
+  "pytest>=8.0.0",
+  "ruff>=0.4.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
