@@ -1,0 +1,156 @@
+{
+  "experiment_id": "EXP-0002",
+  "timestamp_utc": "2026-11-25T20:21:28.542554+00:00",
+  "status": "SUCCESS",
+  "failure_reason": "",
+  "phase": "Phase 3 - Baseline A (No AI)",
+  "hypothesis_id": "H0",
+  "objective": "Re-run Baseline A (os-ken OpenFlow 1.3 without AI) after fixing EXP-0001's OVS netdev veth checksum-offload drop and WSL2 TCP iperf3 -b pacing deadlock; sweep spoofed table-miss Packet-In rates from 0 to 1500 pps to locate the controller CPU/latency and flow-table saturation knees.",
+  "git": {
+    "commit": "bc308a874b252a981251c5ee3c2281272e5e3b98",
+    "dirty": false
+  },
+  "config_path": "configs/exp0002_baseline_no_ai.yaml",
+  "config_sha256": "493434d08bf7f2b83de87e63492e6df74d26726d68cb78ab67af672562138727",
+  "config": {
+    "experiment_id": "EXP-0002",
+    "hypothesis_id": "H0",
+    "phase": "Phase 3 - Baseline A (No AI)",
+    "objective": "Re-run Baseline A (os-ken OpenFlow 1.3 without AI) after fixing EXP-0001's OVS netdev veth checksum-offload drop and WSL2 TCP iperf3 -b pacing deadlock; sweep spoofed table-miss Packet-In rates from 0 to 1500 pps to locate the controller CPU/latency and flow-table saturation knees.\n",
+    "seed": 42,
+    "topology": {
+      "name": "minimal_two_switch",
+      "openflow_version": "OpenFlow13",
+      "flow_table_limit": 4096,
+      "overflow_policy": "refuse",
+      "flow_idle_timeout_s": 15,
+      "flow_hard_timeout_s": 30
+    },
+    "controller": {
+      "host": "127.0.0.1",
+      "ofp_port": 6653,
+      "telemetry_port": 18080,
+      "match_mode": "5tuple",
+      "heartbeat_interval_ms": 50
+    },
+    "benign_traffic": {
+      "iperf3_protocol": "udp",
+      "iperf3_bitrate_mbps": 20,
+      "ping_interval_s": 0.2,
+      "new_flow_probe_hz": 2.0,
+      "new_flow_timeout_s": 2.0,
+      "echo_port": 8088
+    },
+    "load_sweep": {
+      "rates_pps": [
+        0,
+        50,
+        150,
+        300,
+        600,
+        1000,
+        1500
+      ],
+      "duration_s": 12.0,
+      "cooldown_s": 3.0,
+      "payload_bytes": 64,
+      "dst_port": 9999
+    },
+    "telemetry": {
+      "sample_interval_s": 0.5
+    }
+  },
+  "dataset": {
+    "name": "none_synthetic_live_baseline",
+    "version": "n/a",
+    "sha256": "n/a"
+  },
+  "model": {
+    "name": "none_baseline_no_ai"
+  },
+  "features": {
+    "mode": "none_openflow_5tuple_l2_forwarding"
+  },
+  "topology_runtime": {
+    "ovs_datapath": "user",
+    "flow_table_limit": 4096,
+    "overflow_policy": "refuse",
+    "openflow_version": "OpenFlow13",
+    "switches": [
+      "s1",
+      "s2"
+    ],
+    "hosts": {
+      "h_benign": {
+        "ip": "10.0.0.1/24",
+        "mac": "00:00:00:00:00:01"
+      },
+      "h_attacker": {
+        "ip": "10.0.0.2/24",
+        "mac": "00:00:00:00:00:02"
+      },
+      "h_server": {
+        "ip": "10.0.0.3/24",
+        "mac": "00:00:00:00:00:03"
+      }
+    }
+  },
+  "environment": {
+    "timestamp_utc": "2026-11-25T20:21:28.542554+00:00",
+    "platform": "Linux-5.15.153.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "kernel_release": "5.15.153.1-microsoft-standard-WSL2",
+    "machine": "x86_64",
+    "python_version": "3.10.12",
+    "cpu_count_logical": 16,
+    "ovs_version": "ovs-vsctl (Open vSwitch) 2.17.12",
+    "ovs_datapath_mode": "netdev",
+    "mininet_version": "2.3.0",
+    "os_ken_version": "2.11.0"
+  },
+  "pre_test_connectivity_loss_pct": 0.0,
+  "metrics_collected": [
+    "phase",
+    "target_spoof_pps",
+    "achieved_spoof_pps",
+    "sent_spoof_packets",
+    "controller_packet_in_total",
+    "controller_packet_in_pps",
+    "s1_packet_in",
+    "s2_packet_in",
+    "flow_mod_total",
+    "table_full_errors",
+    "handler_p50_ms",
+    "handler_p95_ms",
+    "handler_p99_ms",
+    "handler_max_ms",
+    "event_loop_lag_p50_ms",
+    "event_loop_lag_p95_ms",
+    "event_loop_lag_p99_ms",
+    "event_loop_lag_max_ms",
+    "controller_cpu_mean_pct",
+    "controller_cpu_peak_pct",
+    "controller_rss_peak_mb",
+    "ovs_cpu_mean_pct",
+    "ovs_cpu_peak_pct",
+    "generator_cpu_mean_pct",
+    "s1_flows_peak",
+    "s2_flows_peak",
+    "s1_flow_table_occupancy_pct",
+    "benign_iperf_mbps",
+    "benign_iperf_loss_pct",
+    "benign_iperf_jitter_ms",
+    "benign_iperf_retransmits",
+    "benign_ping_loss_pct",
+    "benign_ping_p50_ms",
+    "benign_ping_p95_ms",
+    "benign_new_flow_success_pct",
+    "benign_new_flow_p50_ms",
+    "benign_new_flow_p95_ms"
+  ],
+  "result_summary": "0pps->max(1500pps): ctrl_pi=17.21->2135.28pps, handler_p99=0.6051->4.3285ms, loop_lag_p95=0.97->7.006ms, ctrl_cpu=1.35->96.98%, ovs_cpu=23.43->274.21%, s1_occ=1.37->99.98%",
+  "limitations": [
+    "Software OVS flow_limit occupancy is a TCAM capacity proxy, not physical hardware TCAM.",
+    "OVS datapath mode: user (netdev userspace when WSL2 lacks openvswitch.ko).",
+    "Stock WSL2 kernel disables sch_htb/sch_netem; standard veth links used with userspace iperf3 pacing."
+  ]
+}
