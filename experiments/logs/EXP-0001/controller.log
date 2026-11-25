@@ -1,0 +1,9 @@
+1 RLock(s) were not greened, to fix this error make sure you run eventlet.monkey_patch() before importing any other modules.
+loading app /workspace/src/controller/baseline_controller.py
+loading app os_ken.controller.ofp_handler
+instantiating app /workspace/src/controller/baseline_controller.py of BaselineInstrumentedSwitch13
+BaselineInstrumentedSwitch13 initialized (match_mode=5tuple, idle=15s, hard=30s, rpc_port=18080)
+instantiating app os_ken.controller.ofp_handler of OFPHandler
+Telemetry RPC listening on 127.0.0.1:18080
+Switch connected: dpid=1
+Switch connected: dpid=2

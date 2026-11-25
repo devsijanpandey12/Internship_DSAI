@@ -74,6 +74,21 @@ def build_minimal_network(
 
     net.start()
 
+    # In OVS userspace (netdev) mode, Linux veth TX checksum/TSO/GSO offload leaves
+    # checksums uncomputed when packets pass through AF_PACKET, causing TCP drops.
+    if datapath == "user":
+        for host in (h_benign, h_attacker, h_server):
+            intf = host.defaultIntf().name
+            host.cmd(f"ethtool -K {intf} tx off rx off sg off tso off gso off gro off 2>/dev/null || true")
+        for sw in (s1, s2):
+            for intf in sw.intfNames():
+                if intf != "lo":
+                    subprocess.run(
+                        ["ethtool", "-K", intf, "tx", "off", "rx", "off", "sg", "off", "tso", "off", "gso", "off", "gro", "off"],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+
     # Configure explicit software flow-table limit (TCAM proxy, NOT hardware TCAM)
     for sw in ("s1", "s2"):
         subprocess.run(

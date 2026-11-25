@@ -42,8 +42,10 @@ docker build -f docker/Dockerfile.sdn -t ku-dsai-sdn:0.1 .
 # Run interactive shell or experiment with workspace mounted
 docker run --rm --privileged --network none `
   -v "${PWD}:/workspace" `
-  ku-dsai-sdn:0.1 python3 scripts/run_exp0001_baseline_no_ai.py --config configs/exp0001_baseline_no_ai.yaml
+  ku-dsai-sdn:0.1 python3 scripts/run_exp0001_baseline_no_ai.py --config configs/exp0002_baseline_no_ai.yaml
 ```
+
+> **OVS `netdev` Userspace Note:** When running under stock WSL2 (`OVS_DATAPATH_MODE=netdev`), `topology/minimal_topology.py` automatically disables `veth` TX/RX/TSO/GSO/GRO checksum offloading via `ethtool` to prevent TCP packet drops across `AF_PACKET` sockets.
 
 *(Note: `--network none` guarantees full network isolation so no emulated attack traffic can ever leave the container.)*
 

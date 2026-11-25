@@ -90,22 +90,45 @@ def parse_ping_output(text: str) -> dict[str, Any]:
     }
 
 
-def parse_iperf3_json(text: str) -> dict[str, Any]:
+def parse_iperf3_json(text: str, protocol: str = "udp") -> dict[str, Any]:
     try:
         data = json.loads(text)
         end = data.get("end", {})
+        if protocol == "udp":
+            sum_recv = end.get("sum_received") or end.get("sum") or {}
+            bps = sum_recv.get("bits_per_second") or 0.0
+            return {
+                "ok": "error" not in data,
+                "protocol": "udp",
+                "goodput_mbps": float(bps) / 1_000_000.0,
+                "jitter_ms": float(sum_recv.get("jitter_ms") or 0.0),
+                "lost_percent": float(sum_recv.get("lost_percent") or 0.0),
+                "retransmits": 0,
+                "error": data.get("error"),
+            }
         sum_sent = end.get("sum_sent", {})
         sum_recv = end.get("sum_received", {})
         bps = sum_recv.get("bits_per_second") or sum_sent.get("bits_per_second") or 0.0
         retransmits = sum_sent.get("retransmits", 0)
         return {
             "ok": "error" not in data,
+            "protocol": "tcp",
             "goodput_mbps": float(bps) / 1_000_000.0,
+            "jitter_ms": None,
+            "lost_percent": None,
             "retransmits": int(retransmits) if retransmits is not None else 0,
             "error": data.get("error"),
         }
     except Exception as exc:
-        return {"ok": False, "goodput_mbps": 0.0, "retransmits": -1, "error": f"parse_error: {exc}"}
+        return {
+            "ok": False,
+            "protocol": protocol,
+            "goodput_mbps": 0.0,
+            "jitter_ms": None,
+            "lost_percent": None,
+            "retransmits": -1,
+            "error": f"parse_error: {exc}",
+        }
 
 
 def sample_resources_worker(
@@ -306,16 +329,19 @@ def run_experiment(config_path: Path) -> None:
             mon_thread.start()
 
             # Launch concurrent benign workloads + controlled spoofed Packet-In generator
+            iperf_proto = str(benign_cfg.get("iperf3_protocol", "udp")).lower()
             iperf_cmd = [
                 "iperf3",
                 "-c",
                 server_ip,
-                "-b",
-                f"{benign_cfg['iperf3_bitrate_mbps']}M",
                 "-t",
                 str(int(duration_s)),
                 "-J",
             ]
+            if iperf_proto == "udp":
+                iperf_cmd.extend(["-u", "-b", f"{benign_cfg['iperf3_bitrate_mbps']}M"])
+            elif benign_cfg.get("iperf3_bitrate_mbps"):
+                iperf_cmd.extend(["-b", f"{benign_cfg['iperf3_bitrate_mbps']}M"])
             ping_cmd = [
                 "ping",
                 "-i",
@@ -405,7 +431,7 @@ def run_experiment(config_path: Path) -> None:
             )
             ctrl_snap = snap_resp["snapshot"]
 
-            iperf_stats = parse_iperf3_json(iperf_out)
+            iperf_stats = parse_iperf3_json(iperf_out, protocol=iperf_proto)
             if not iperf_stats["ok"] and iperf_err:
                 iperf_stats["stderr"] = iperf_err.strip()
             ping_stats = parse_ping_output(ping_out)
@@ -462,6 +488,8 @@ def run_experiment(config_path: Path) -> None:
                 "s2_flows_peak": s2_peak,
                 "s1_flow_table_occupancy_pct": round(s1_occ_pct, 2),
                 "benign_iperf_mbps": round(float(iperf_stats["goodput_mbps"]), 2),
+                "benign_iperf_loss_pct": round(float(iperf_stats["lost_percent"]), 3) if iperf_stats.get("lost_percent") is not None else None,
+                "benign_iperf_jitter_ms": round(float(iperf_stats["jitter_ms"]), 3) if iperf_stats.get("jitter_ms") is not None else None,
                 "benign_iperf_retransmits": int(iperf_stats["retransmits"]),
                 "benign_ping_loss_pct": round(float(ping_stats["loss_pct"]), 2),
                 "benign_ping_p50_ms": round(ping_stats["rtt_ms"]["p50"], 3) if ping_stats["rtt_ms"]["p50"] is not None else None,

@@ -27,3 +27,12 @@ All methodological, architectural, environmental, and scope decisions are logged
   1. Immediately deploy an isolated Ubuntu 22.04 privileged Docker testbed (`docker/Dockerfile.sdn`) using OVS userspace datapath (`datapath_type=netdev`) and standard `veth` links (`Link`, not `TCLink`) to execute functional verification and Baseline A (`EXP-0001`) **without modifying host Windows/WSL2 configuration**.
   2. Explicitly log `ovs_datapath_mode=netdev` and `tc_shaping=unavailable` in every Docker experiment manifest and monitor `ovs-vswitchd` CPU independently from `os-ken`.
   3. Recommend acquiring a **native Ubuntu 22.04/24.04 LTS PC in DSAI Lab** (primary recommendation) or a dedicated **Ubuntu 22.04 VM (VMware Workstation Pro)** before running link-bandwidth-constrained (`TCLink`) final paper benchmarks so kernel `openvswitch.ko` and `sch_htb`/`sch_netem` are active without Windows/WSL2 scheduling jitter.
+
+## DEC-005: Root Cause Diagnosis of `EXP-0001` Failure & Instrumentation Fix (`EXP-0002`)
+- **Date:** 2026-11-26
+- **Context:** `EXP-0001` passed pre-test `pingAll` (0.00% loss) but failed in Phase 1 (`rate_0pps`) with `iperf3 -c 10.0.0.3 -b 50M -t 12 -J` timing out after 32 s. `EXP-0001` logs and manifest are permanently preserved as `FAILED`.
+- **Empirical Root Cause (Verified via Controlled Diagnostic):**
+  1. In OVS `netdev` userspace mode (`AF_PACKET`), Linux `veth` TX checksum/TSO/GSO offload leaves TCP checksums uncomputed, causing the receiving kernel to silently drop TCP SYN frames (while ICMP `ping` succeeds because ICMP checksums are computed in software). Disabling offload via `ethtool -K <intf> tx off rx off sg off tso off gso off gro off` restored TCP connectivity immediately (unpaced TCP achieved 1.05 Gbps).
+  2. Ubuntu 22.04's `iperf3` TCP `-b` pacing option stalled during teardown on the WSL2 kernel (which lacks `sch_fq`/`tc` pacing support), whereas `iperf3 -u -b 20M` completed cleanly with 0% loss and 0.033 ms jitter without pegging `ovs-vswitchd` CPU.
+- **Decision:** Disable `veth` offload automatically when `datapath == "user"` in `topology/minimal_topology.py`, use paced UDP (`iperf3 -u -b 20M`) for steady data-plane goodput/jitter/loss alongside our live TCP `new_flow_probe` (2 fresh TCP handshakes/sec) and ICMP `ping`, and execute `EXP-0002` across `[0, 50, 150, 300, 600, 1000, 1500]` pps.
+

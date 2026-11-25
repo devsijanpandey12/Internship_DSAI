@@ -1,0 +1,42 @@
+experiment_id: "EXP-0002"
+hypothesis_id: "H0"
+phase: "Phase 3 - Baseline A (No AI)"
+objective: >
+  Re-run Baseline A (os-ken OpenFlow 1.3 without AI) after fixing EXP-0001's OVS netdev
+  veth checksum-offload drop and WSL2 TCP iperf3 -b pacing deadlock; sweep spoofed
+  table-miss Packet-In rates from 0 to 1500 pps to locate the controller CPU/latency
+  and flow-table saturation knees.
+seed: 42
+
+topology:
+  name: "minimal_two_switch"
+  openflow_version: "OpenFlow13"
+  flow_table_limit: 4096
+  overflow_policy: "refuse"
+  flow_idle_timeout_s: 15
+  flow_hard_timeout_s: 30
+
+controller:
+  host: "127.0.0.1"
+  ofp_port: 6653
+  telemetry_port: 18080
+  match_mode: "5tuple"
+  heartbeat_interval_ms: 50
+
+benign_traffic:
+  iperf3_protocol: "udp"
+  iperf3_bitrate_mbps: 20
+  ping_interval_s: 0.2
+  new_flow_probe_hz: 2.0
+  new_flow_timeout_s: 2.0
+  echo_port: 8088
+
+load_sweep:
+  rates_pps: [0, 50, 150, 300, 600, 1000, 1500]
+  duration_s: 12.0
+  cooldown_s: 3.0
+  payload_bytes: 64
+  dst_port: 9999
+
+telemetry:
+  sample_interval_s: 0.5
