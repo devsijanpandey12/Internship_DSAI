@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from evaluation.metrics import ensure_non_overwrite, summarize_distribution
+from evaluation.metrics import ensure_non_overwrite, mean_ci95, summarize_distribution
 from evaluation.traffic_gen import build_spoofed_udp_frame, ipv4_checksum, mac_to_bytes
 
 
@@ -60,3 +60,11 @@ def test_build_spoofed_udp_frame_valid_headers() -> None:
     assert udp_len == 72
     assert udp_csum == 0
     assert frame[42:] == payload
+
+
+def test_mean_ci95_small_sample() -> None:
+    m, s, ci = mean_ci95([10.0, 12.0, 14.0])
+    assert pytest.approx(m, abs=1e-6) == 12.0
+    assert pytest.approx(s, abs=1e-6) == 2.0
+    assert ci is not None and ci > 4.0
+

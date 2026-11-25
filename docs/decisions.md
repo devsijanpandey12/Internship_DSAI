@@ -36,3 +36,12 @@ All methodological, architectural, environmental, and scope decisions are logged
   2. Ubuntu 22.04's `iperf3` TCP `-b` pacing option stalled during teardown on the WSL2 kernel (which lacks `sch_fq`/`tc` pacing support), whereas `iperf3 -u -b 20M` completed cleanly with 0% loss and 0.033 ms jitter without pegging `ovs-vswitchd` CPU.
 - **Decision:** Disable `veth` offload automatically when `datapath == "user"` in `topology/minimal_topology.py`, use paced UDP (`iperf3 -u -b 20M`) for steady data-plane goodput/jitter/loss alongside our live TCP `new_flow_probe` (2 fresh TCP handshakes/sec) and ICMP `ping`, and execute `EXP-0002` across `[0, 50, 150, 300, 600, 1000, 1500]` pps.
 
+## DEC-006: Scope Locked to Option B (Pure Live SDN Bottleneck & Lightweight Defense)
+- **Date:** 2026-11-26
+- **Context:** User confirmed narrowing final research scope to **Pure Live SDN Bottleneck + Lightweight Defense** (dropping the parallel constrained adversarial evasion track from the 12-week deliverable), and noted that a native DSAI Lab Ubuntu machine is not immediately available today but can be arranged for later benchmark replication.
+- **Decision:**
+  1. Lock manuscript scope exclusively to empirical profiling of live SDN controller bottlenecks (offline vs. live AI-IDS divergence, component-level latency/CPU attribution) and controlled evaluation of lightweight architectural/feature/scheduling defenses.
+  2. Maintain strict portability between the isolated Docker `netdev` container (for Phases 2–5 development & calibration) and native Ubuntu kernel OVS + `TCLink` (for Phase 6–7 final replication once DSAI Lab access is arranged).
+  3. Introduce dedicated CPU core pinning (`taskset`: core 0 for `os-ken`, core 1 for traffic generator, cores 2–7 for `ovs-vswitchd`) starting with `EXP-0003` to eliminate CPU contention between userspace OVS and the controller.
+
+

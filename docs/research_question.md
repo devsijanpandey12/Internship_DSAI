@@ -24,10 +24,6 @@ Under high-rate traffic or spoofed-header DDoS floods, executing flow feature ex
 - **RQ2 (Offline vs. Live Divergence):** How strongly do standard offline ML/DL baselines (`Logistic Regression`, `Random Forest`, `XGBoost`/`LightGBM`, `MLP`, and heavier sequential/graph models only if justified) diverge when evaluated on live system cost (tail latency, CPU %, flow-table occupancy, benign QoS) versus offline classification metrics (Macro F1, FPR)?
 - **RQ3 (Targeted Architectural Mitigation):** Given the empirically identified bottleneck, which architectural intervention (e.g., native OpenFlow lightweight features, asynchronous/decoupled inference, batching, selective/two-stage filtering, or early rate/entropy gating) achieves a statistically significant improvement in the detection-vs-overhead Pareto frontier?
 
-## 3. Scope Alignment Note (Requires Supervisor Confirmation)
+## 3. Locked Research Scope (`DEC-006`)
 
-The 2026-11-25 pitch deck proposed **two coupled pillars**:
-1. **Pillar 1 (SDN Live Controller Bottleneck):** Offline accuracy vs. live controller latency, CPU, flow-table occupancy, and benign QoS.
-2. **Pillar 2 (Constrained Adversarial Evasion):** Protocol-valid evasion (mutability, MTU <= 1500 B, integer counts, coupled feature recomputation, functional attack preservation via `Scapy`).
-
-**Current Execution Policy:** Begin strictly with **Pillar 1** to build a rock-solid, calibrated live SDN testbed and localize actual bottlenecks first. Pillar 2 (if retained by Dr. Shakya for the unified Option A paper) layers cleanly on top of the validated testbed once Baseline A–C overhead profiles are established. See `docs/decisions.md` (`DEC-001`).
+Scope is formally locked to **Pure Live SDN Controller Bottleneck & Lightweight AI Defense** (Option B from the 2026-11-25 pitch proposal). Protocol-constrained adversarial evasion is intentionally deferred to future work so the 12-week 2-person project achieves rigorous systems-level depth, component attribution, multi-seed statistical validation, and native-Linux replication.

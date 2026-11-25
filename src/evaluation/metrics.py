@@ -6,6 +6,7 @@ import csv
 import datetime as dt
 import hashlib
 import json
+import math
 import os
 import platform
 import subprocess
@@ -55,6 +56,22 @@ def summarize_distribution(values: list[float] | np.ndarray) -> dict[str, float 
         "p99": float(np.percentile(arr, 99)),
         "max": float(np.max(arr)),
     }
+
+
+def mean_ci95(values: list[float]) -> tuple[float | None, float | None, float | None]:
+    """Return (mean, sample_std, half_width_95ci) using exact small-N Student-t critical values."""
+    clean = [float(v) for v in values if v is not None]
+    n = len(clean)
+    if n == 0:
+        return None, None, None
+    arr = np.asarray(clean, dtype=np.float64)
+    mean = float(np.mean(arr))
+    if n == 1:
+        return mean, 0.0, 0.0
+    std = float(np.std(arr, ddof=1))
+    t_table = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262}
+    t_crit = t_table.get(n - 1, 1.96)
+    return mean, std, float(t_crit * std / math.sqrt(n))
 
 
 def sha256_file(path: Path) -> str:

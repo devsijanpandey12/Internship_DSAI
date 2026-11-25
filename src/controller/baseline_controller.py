@@ -34,6 +34,7 @@ class BaselineInstrumentedSwitch13(app_manager.OSKenApp):
         self.flow_idle_timeout = int(os.environ.get("SDN_FLOW_IDLE_TIMEOUT", "15"))
         self.flow_hard_timeout = int(os.environ.get("SDN_FLOW_HARD_TIMEOUT", "30"))
         self.heartbeat_interval_s = float(os.environ.get("SDN_HEARTBEAT_INTERVAL_MS", "50")) / 1000.0
+        self.inject_cpu_ms = float(os.environ.get("SDN_INJECT_CPU_MS", "0.0"))
 
         self.mac_to_port: dict[int, dict[str, int]] = {}
         self.datapaths: dict[int, Any] = {}
@@ -137,6 +138,9 @@ class BaselineInstrumentedSwitch13(app_manager.OSKenApp):
                     for dp in self.datapaths.values():
                         self._install_table_miss(dp)
                     resp = {"ok": True, "dpids": sorted(self.datapaths.keys())}
+                elif cmd == "set_inject_cpu_ms":
+                    self.inject_cpu_ms = max(0.0, float(req.get("ms", 0.0)))
+                    resp = {"ok": True, "inject_cpu_ms": self.inject_cpu_ms}
                 else:
                     resp = {"ok": False, "error": f"unknown command: {cmd}"}
                 stream.write(json.dumps(resp) + "\n")
@@ -243,6 +247,10 @@ class BaselineInstrumentedSwitch13(app_manager.OSKenApp):
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev: Any) -> None:
         t0 = time.perf_counter_ns()
+        if self.inject_cpu_ms > 0.0:
+            target_ns = t0 + int(self.inject_cpu_ms * 1_000_000)
+            while time.perf_counter_ns() < target_ns:
+                pass
         msg = ev.msg
         datapath = msg.datapath
         ofproto = datapath.ofproto
