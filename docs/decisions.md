@@ -44,4 +44,14 @@ All methodological, architectural, environmental, and scope decisions are logged
   2. Maintain strict portability between the isolated Docker `netdev` container (for Phases 2–5 development & calibration) and native Ubuntu kernel OVS + `TCLink` (for Phase 6–7 final replication once DSAI Lab access is arranged).
   3. Introduce dedicated CPU core pinning (`taskset`: core 0 for `os-ken`, core 1 for traffic generator, cores 2–7 for `ovs-vswitchd`) starting with `EXP-0003` to eliminate CPU contention between userspace OVS and the controller.
 
+## DEC-007: Flow-Carryover Audit (`EXP-0002` Caveat & `EXP-0003` Invalidation -> Cookie-Masked Flush Fix)
+- **Date:** 2026-11-26
+- **Context:** Auditing `EXP-0003` revealed that trials `0.25, 0.50, 2.00, 4.00 ms` observed only `~13 pps` `Packet-In` instead of `~480 pps`, while `0.00` and `1.00 ms` observed `~480 pps`. Root-cause inspection revealed that `ovs-ofctl -O OpenFlow13 del-flows <sw> "priority=10"` silently failed (non-strict OpenFlow 1.3 `del-flows` rejects `priority=` matching, and `stderr` was suppressed with `check=False`).
+- **Retroactive Audit of `EXP-0002`:** Inspecting `EXP-0002`'s per-phase `resource_samples` showed that Phases 3–7 started with residual dynamic flows from prior phases (`635`, `1805`, `3498`, `3719`, `2956` flows on `s1`). While `EXP-0002`'s `Packet-In` rates, controller CPU saturation (`1.35% -> 96.98%`), handler p99, and `eventlet` loop lag remained valid (because each phase used a distinct generator seed so incoming spoofed packets still missed the table), its `s1_flows_peak` and `table_full_errors` in Phases 3–7 were confounded by carryover. Both `EXP-0002` and `EXP-0003` artifacts are preserved permanently without deletion or overwrite.
+- **Decision:**
+  1. Tag all dynamic rules with OpenFlow `cookie=0x10` (`cookie=0x0` reserved for priority-0 table-miss).
+  2. Replace `flush_dynamic_flows()` with `ovs-ofctl -O OpenFlow13 del-flows <sw> cookie=0x10/-1` (`check=True`) followed by a hard assertion `get_dynamic_flow_count(sw) == 0` (verified empirically in Docker).
+  3. Pass unique deterministic `trial_seed = seed * 100 + level_idx` per trial and execute clean zero-carryover calibration as **`EXP-0004`**.
+
+
 

@@ -1,0 +1,49 @@
+experiment_id: "EXP-0004"
+hypothesis_id: "H0b"
+phase: "Phase 3/4 - Core-Pinned Latency-Budget Calibration (Zero-Carryover)"
+objective: >
+  Clean replication of EXP-0003 after fixing the OpenFlow 1.3 cookie-masked flow flush
+  (strictly asserting 0 dynamic flows before every trial) and unique per-trial generator seeds.
+  Quantifies the exact synchronous per-Packet-In CPU compute budget of core-pinned os-ken
+  at fixed 250 pps spoofed table-miss load (~500 Packet-In/s) across 3 repeated seeds.
+seeds: [42, 43, 44]
+
+cpu_pinning:
+  enabled: true
+  controller_cores: "0"
+  generator_cores: "1"
+  ovs_cores: "2-7"
+
+topology:
+  name: "minimal_two_switch"
+  openflow_version: "OpenFlow13"
+  flow_table_limit: 4096
+  overflow_policy: "refuse"
+  flow_idle_timeout_s: 15
+  flow_hard_timeout_s: 30
+
+controller:
+  host: "127.0.0.1"
+  ofp_port: 6653
+  telemetry_port: 18080
+  match_mode: "5tuple"
+  heartbeat_interval_ms: 50
+
+benign_traffic:
+  iperf3_protocol: "udp"
+  iperf3_bitrate_mbps: 20
+  ping_interval_s: 0.2
+  new_flow_probe_hz: 2.0
+  new_flow_timeout_s: 2.0
+  echo_port: 8088
+
+calibration_sweep:
+  fixed_spoof_pps: 250
+  inject_cpu_ms_levels: [0.0, 0.25, 0.5, 1.0, 2.0, 4.0]
+  duration_s: 10.0
+  cooldown_s: 2.0
+  payload_bytes: 64
+  dst_port: 9999
+
+telemetry:
+  sample_interval_s: 0.5

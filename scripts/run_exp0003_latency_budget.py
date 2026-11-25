@@ -185,15 +185,18 @@ def run_experiment(config_path: Path) -> None:
         run_idx = 0
 
         for seed in seeds:
-            for inject_ms in levels:
+            for level_idx, inject_ms in enumerate(levels):
                 run_idx += 1
+                trial_seed = seed * 100 + level_idx
                 phase_name = f"seed{seed}_cpu{inject_ms:.2f}ms"
-                print(f"[{exp_id}] ({run_idx}/{total_runs}) {phase_name} @ {fixed_pps:.0f} pps ...", flush=True)
+                print(f"[{exp_id}] ({run_idx}/{total_runs}) {phase_name} @ {fixed_pps:.0f} pps (trial_seed={trial_seed}) ...", flush=True)
 
                 flush_dynamic_flows(["s1", "s2"], str(topo_cfg["openflow_version"]))
                 rpc_call(ctrl_cfg["host"], int(ctrl_cfg["telemetry_port"]), {"cmd": "reinstall_table_miss"})
                 rpc_call(ctrl_cfg["host"], int(ctrl_cfg["telemetry_port"]), {"cmd": "set_inject_cpu_ms", "ms": inject_ms})
                 time.sleep(cooldown_s)
+                # Re-flush after cooldown so any stray packets during cooldown do not carry over
+                flush_dynamic_flows(["s1", "s2"], str(topo_cfg["openflow_version"]))
                 rpc_call(ctrl_cfg["host"], int(ctrl_cfg["telemetry_port"]), {"cmd": "reset_phase", "phase_name": phase_name})
 
                 res_samples: list[dict[str, Any]] = []
@@ -235,7 +238,7 @@ def run_experiment(config_path: Path) -> None:
                     "--iface", attacker_iface, "--src-mac", attacker_mac, "--dst-mac", server_mac,
                     "--dst-ip", server_ip, "--dst-port", str(cal_cfg["dst_port"]),
                     "--rate-pps", str(fixed_pps), "--duration", str(duration_s),
-                    "--payload-bytes", str(cal_cfg["payload_bytes"]), "--seed", str(seed),
+                    "--payload-bytes", str(cal_cfg["payload_bytes"]), "--seed", str(trial_seed),
                 ]
                 if pin_cfg.get("enabled"):
                     gen_cmd = ["taskset", "-c", str(pin_cfg["generator_cores"]), *gen_cmd]

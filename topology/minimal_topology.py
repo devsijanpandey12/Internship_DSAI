@@ -130,15 +130,25 @@ def build_minimal_network(
     return net, meta
 
 
-def flush_dynamic_flows(switches: list[str] = ("s1", "s2"), openflow_version: str = "OpenFlow13") -> None:
-    """Remove installed priority=10 dynamic rules while preserving priority=0 table-miss."""
+def flush_dynamic_flows(
+    switches: list[str] | tuple[str, ...] = ("s1", "s2"),
+    openflow_version: str = "OpenFlow13",
+    dynamic_cookie: str = "0x10/-1",
+) -> None:
+    """Remove all dynamic controller-installed rules (cookie=0x10) while preserving priority=0 table-miss.
+
+    Strictly asserts zero remaining dynamic flows on every switch to prevent silent cross-phase carryover.
+    """
     for sw in switches:
         subprocess.run(
-            ["ovs-ofctl", "-O", openflow_version, "del-flows", sw, "priority=10"],
-            check=False,
+            ["ovs-ofctl", "-O", openflow_version, "del-flows", sw, f"cookie={dynamic_cookie}"],
+            check=True,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
         )
+        remaining = get_dynamic_flow_count(sw, openflow_version)
+        if remaining != 0:
+            raise RuntimeError(f"Flow flush failed on {sw}: {remaining} dynamic flows still present")
 
 
 def get_dynamic_flow_count(switch_name: str, openflow_version: str = "OpenFlow13") -> int:

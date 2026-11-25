@@ -159,7 +159,7 @@ class BaselineInstrumentedSwitch13(app_manager.OSKenApp):
         match = parser.OFPMatch()
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
-        mod = parser.OFPFlowMod(datapath=datapath, priority=0, match=match, instructions=inst)
+        mod = parser.OFPFlowMod(datapath=datapath, cookie=0x0, priority=0, match=match, instructions=inst)
         datapath.send_msg(mod)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
@@ -195,6 +195,7 @@ class BaselineInstrumentedSwitch13(app_manager.OSKenApp):
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
         kwargs: dict[str, Any] = {
             "datapath": datapath,
+            "cookie": 0x10,
             "priority": priority,
             "match": match,
             "instructions": inst,

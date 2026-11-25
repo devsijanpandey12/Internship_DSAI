@@ -12,7 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 sys.path.insert(0, str(REPO_ROOT))
 
-from topology.minimal_topology import build_minimal_network, get_dynamic_flow_count  # noqa: E402
+from topology.minimal_topology import build_minimal_network, flush_dynamic_flows, get_dynamic_flow_count  # noqa: E402
 
 
 def main() -> None:
@@ -49,6 +49,8 @@ def main() -> None:
         )
         assert loss == 0.0, f"Expected 0% loss, got {loss}%"
         assert f1 > 0 and f2 > 0, f"Expected dynamic flows installed, got s1={f1}, s2={f2}"
+        flush_dynamic_flows(["s1", "s2"])
+        print("SMOKE_FLUSH_OK: dynamic flows cleanly flushed to 0 on s1 and s2", flush=True)
     finally:
         if net is not None:
             net.stop()

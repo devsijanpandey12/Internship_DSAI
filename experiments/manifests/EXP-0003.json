@@ -1,0 +1,120 @@
+{
+  "experiment_id": "EXP-0003",
+  "timestamp_utc": "2026-11-25T20:46:21.311733+00:00",
+  "status": "SUCCESS",
+  "failure_reason": "",
+  "phase": "Phase 3/4 - Core-Pinned Latency-Budget Calibration",
+  "hypothesis_id": "H0b",
+  "objective": "Quantify the exact synchronous per-Packet-In CPU compute budget of a core-pinned os-ken OpenFlow 1.3 controller under a fixed sub-saturation spoofed table-miss load (250 pps -> ~500 Packet-In/s across s1+s2) across 3 repeated random seeds, establishing an empirical latency ceiling that candidate live AI pipelines must satisfy.",
+  "git": {
+    "commit": "8bfb92b6112560c262aa1670a8bbfcc1a0a88eec",
+    "dirty": false
+  },
+  "config_path": "configs/exp0003_latency_budget.yaml",
+  "config_sha256": "bae6e0e26663e44d38aa2f100c315b332a8f401f3b09abf31147896fb1521375",
+  "config": {
+    "experiment_id": "EXP-0003",
+    "hypothesis_id": "H0b",
+    "phase": "Phase 3/4 - Core-Pinned Latency-Budget Calibration",
+    "objective": "Quantify the exact synchronous per-Packet-In CPU compute budget of a core-pinned os-ken OpenFlow 1.3 controller under a fixed sub-saturation spoofed table-miss load (250 pps -> ~500 Packet-In/s across s1+s2) across 3 repeated random seeds, establishing an empirical latency ceiling that candidate live AI pipelines must satisfy.\n",
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "cpu_pinning": {
+      "enabled": true,
+      "controller_cores": "0",
+      "generator_cores": "1",
+      "ovs_cores": "2-7"
+    },
+    "topology": {
+      "name": "minimal_two_switch",
+      "openflow_version": "OpenFlow13",
+      "flow_table_limit": 4096,
+      "overflow_policy": "refuse",
+      "flow_idle_timeout_s": 15,
+      "flow_hard_timeout_s": 30
+    },
+    "controller": {
+      "host": "127.0.0.1",
+      "ofp_port": 6653,
+      "telemetry_port": 18080,
+      "match_mode": "5tuple",
+      "heartbeat_interval_ms": 50
+    },
+    "benign_traffic": {
+      "iperf3_protocol": "udp",
+      "iperf3_bitrate_mbps": 20,
+      "ping_interval_s": 0.2,
+      "new_flow_probe_hz": 2.0,
+      "new_flow_timeout_s": 2.0,
+      "echo_port": 8088
+    },
+    "calibration_sweep": {
+      "fixed_spoof_pps": 250,
+      "inject_cpu_ms_levels": [
+        0.0,
+        0.25,
+        0.5,
+        1.0,
+        2.0,
+        4.0
+      ],
+      "duration_s": 10.0,
+      "cooldown_s": 2.0,
+      "payload_bytes": 64,
+      "dst_port": 9999
+    },
+    "telemetry": {
+      "sample_interval_s": 0.5
+    }
+  },
+  "cpu_pinning_applied": {
+    "controller": true,
+    "ovs_vswitchd": true
+  },
+  "topology_runtime": {
+    "ovs_datapath": "user",
+    "flow_table_limit": 4096,
+    "overflow_policy": "refuse",
+    "openflow_version": "OpenFlow13",
+    "switches": [
+      "s1",
+      "s2"
+    ],
+    "hosts": {
+      "h_benign": {
+        "ip": "10.0.0.1/24",
+        "mac": "00:00:00:00:00:01"
+      },
+      "h_attacker": {
+        "ip": "10.0.0.2/24",
+        "mac": "00:00:00:00:00:02"
+      },
+      "h_server": {
+        "ip": "10.0.0.3/24",
+        "mac": "00:00:00:00:00:03"
+      }
+    }
+  },
+  "environment": {
+    "timestamp_utc": "2026-11-25T20:46:21.311733+00:00",
+    "platform": "Linux-5.15.153.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "kernel_release": "5.15.153.1-microsoft-standard-WSL2",
+    "machine": "x86_64",
+    "python_version": "3.10.12",
+    "cpu_count_logical": 16,
+    "ovs_version": "ovs-vsctl (Open vSwitch) 2.17.12",
+    "ovs_datapath_mode": "netdev",
+    "mininet_version": "2.3.0",
+    "os_ken_version": "2.11.0"
+  },
+  "pre_test_connectivity_loss_pct": 0.0,
+  "result_summary": "0ms->4ms (@250pps, N=3): ctrl_pi=477.79->12.74pps, ctrl_cpu=28.293->6.413%, lag_p95=1.052->1.587ms, new_flow_ok=100.0->100.0%",
+  "limitations": [
+    "Synthetic busy-wait models pure synchronous Python CPU cost without memory/cache footprint of real models (real feature extraction + ML profiled next in Phase 4).",
+    "OVS datapath mode: netdev userspace (isolated from controller via taskset core pinning).",
+    "Stock WSL2 kernel lacks sch_htb/sch_netem."
+  ]
+}
