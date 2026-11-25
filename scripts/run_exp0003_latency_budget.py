@@ -191,12 +191,24 @@ def run_experiment(config_path: Path) -> None:
                 phase_name = f"seed{seed}_cpu{inject_ms:.2f}ms"
                 print(f"[{exp_id}] ({run_idx}/{total_runs}) {phase_name} @ {fixed_pps:.0f} pps (trial_seed={trial_seed}) ...", flush=True)
 
+                # Wait for any saturated backlog from prior trial to drain at 0 ms before flushing flows
+                rpc_call(ctrl_cfg["host"], int(ctrl_cfg["telemetry_port"]), {"cmd": "set_inject_cpu_ms", "ms": 0.0})
+                time.sleep(cooldown_s)
+                prev_pi = -1
+                for _ in range(10):
+                    snap_q = rpc_call(
+                        ctrl_cfg["host"], int(ctrl_cfg["telemetry_port"]),
+                        {"cmd": "snapshot_phase", "include_raw": False}, timeout=10.0,
+                    )["snapshot"]
+                    cur_pi = int(snap_q["packet_in_total"])
+                    if cur_pi == prev_pi:
+                        break
+                    prev_pi = cur_pi
+                    time.sleep(0.3)
+
                 flush_dynamic_flows(["s1", "s2"], str(topo_cfg["openflow_version"]))
                 rpc_call(ctrl_cfg["host"], int(ctrl_cfg["telemetry_port"]), {"cmd": "reinstall_table_miss"})
                 rpc_call(ctrl_cfg["host"], int(ctrl_cfg["telemetry_port"]), {"cmd": "set_inject_cpu_ms", "ms": inject_ms})
-                time.sleep(cooldown_s)
-                # Re-flush after cooldown so any stray packets during cooldown do not carry over
-                flush_dynamic_flows(["s1", "s2"], str(topo_cfg["openflow_version"]))
                 rpc_call(ctrl_cfg["host"], int(ctrl_cfg["telemetry_port"]), {"cmd": "reset_phase", "phase_name": phase_name})
 
                 res_samples: list[dict[str, Any]] = []

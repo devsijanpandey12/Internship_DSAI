@@ -1,0 +1,6 @@
+seed,inject_cpu_ms,achieved_spoof_pps,controller_packet_in_pps,controller_packet_in_total,table_full_errors,handler_p50_ms,handler_p95_ms,handler_p99_ms,event_loop_lag_p50_ms,event_loop_lag_p95_ms,event_loop_lag_p99_ms,controller_cpu_mean_pct,controller_cpu_peak_pct,ovs_cpu_mean_pct,s1_flow_table_occupancy_pct,benign_iperf_mbps,benign_iperf_loss_pct,benign_ping_p95_ms,benign_new_flow_success_pct,benign_new_flow_p50_ms,benign_new_flow_p95_ms
+42,0.0,249.05,476.88,5175,0,0.3585,0.5252,0.6343,0.392,1.064,1.278,34.59,42.8,97.46,62.16,20.0,0.0,2.699,100.0,8.663,10.148
+42,0.25,248.57,471.38,5151,0,0.6083,0.7846,0.9063,0.392,1.04,1.289,45.22,53.6,98.55,62.16,20.0,0.0,2.323,100.0,11.666,16.088
+42,0.5,247.45,473.96,5156,0,0.7954,0.9509,1.0744,0.451,1.008,1.098,50.51,60.2,95.77,62.16,20.0,0.0,2.947,100.0,15.065,20.727
+42,1.0,248.46,472.65,5141,0,1.2973,1.4746,1.5976,0.653,1.602,2.557,73.12,83.8,94.81,62.16,20.0,0.0,4.858,100.0,24.927,32.835
+42,2.0,248.71,394.17,4912,0,2.3425,3.389,4.0845,26.974,34.681,45.977,97.6,103.2,44.33,60.25,20.0,0.0,2.369,50.0,702.251,1603.5

@@ -53,5 +53,11 @@ All methodological, architectural, environmental, and scope decisions are logged
   2. Replace `flush_dynamic_flows()` with `ovs-ofctl -O OpenFlow13 del-flows <sw> cookie=0x10/-1` (`check=True`) followed by a hard assertion `get_dynamic_flow_count(sw) == 0` (verified empirically in Docker).
   3. Pass unique deterministic `trial_seed = seed * 100 + level_idx` per trial and execute clean zero-carryover calibration as **`EXP-0004`**.
 
+## DEC-008: Post-Saturation Queue-Drain Quiescence Before Flow Flush (`EXP-0004` -> `EXP-0005`)
+- **Date:** 2026-11-26
+- **Context:** In `EXP-0004`, Trials 1–5 (`0.00 -> 2.00 ms`) executed cleanly and revealed a sharp saturation cliff at `2.00 ms` (`ctrl_cpu=97.6%`, `event_loop_lag_p95=34.68 ms`, `new_flow_ok=50.0%`). Immediately after Trial 5, our zero-flow assertion caught `8` residual dynamic flows on `s1` because `flush_dynamic_flows()` ran *before* `cooldown_s` while `os-ken`'s saturated socket buffer was still emitting the last in-flight `OFPFlowMod` messages from Trial 5.
+- **Decision:** Preserve `EXP-0004` permanently, reset `inject_cpu_ms = 0.0`, sleep `cooldown_s`, wait for `packet_in_total` quiescence (zero new `Packet-In`s over 0.3 s), and *then* run `flush_dynamic_flows()` + zero-flow assertion before each trial in **`EXP-0005`**.
+
+
 
 
