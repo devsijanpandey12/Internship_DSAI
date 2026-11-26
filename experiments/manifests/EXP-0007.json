@@ -1,0 +1,207 @@
+{
+  "experiment_id": "EXP-0007",
+  "timestamp_utc": "2026-11-26T07:38:09.280985+00:00",
+  "status": "SUCCESS",
+  "failure_reason": "",
+  "phase": "Phase 4B - Live SDN Component Attribution (Baseline A vs B vs C)",
+  "hypothesis_id": "H1+H2",
+  "objective": "Deploy real InSDN-trained lightweight (LR, LightGBM, XGBoost) and heavy (Random Forest) models alongside live T1a (6-feature O(1) OpenFlow) and T3 (65-feature CIC-style) extractors synchronously inside core-pinned os-ken at 250 pps spoofed table-miss load (~500 Packet-In/s across s1+s2, N=3 seeds). Directly attribute live controller latency and legitimate new-flow collapse across base OpenFlow handling, live feature extraction, synchronous batch=1 inference, and cooperative eventlet loop starvation.",
+  "git": {
+    "commit": "98403de508ae6e6e31a94081deb46c03d1d1cd07",
+    "dirty": false
+  },
+  "config_path": "configs/exp0007_live_component_profiling.yaml",
+  "config_sha256": "2b23f71610f19c9ee4d4a54f5d3e89a542a18380c5b945d25638ca747bb4d79e",
+  "config": {
+    "experiment_id": "EXP-0007",
+    "hypothesis_id": "H1+H2",
+    "phase": "Phase 4B - Live SDN Component Attribution (Baseline A vs B vs C)",
+    "objective": "Deploy real InSDN-trained lightweight (LR, LightGBM, XGBoost) and heavy (Random Forest) models alongside live T1a (6-feature O(1) OpenFlow) and T3 (65-feature CIC-style) extractors synchronously inside core-pinned os-ken at 250 pps spoofed table-miss load (~500 Packet-In/s across s1+s2, N=3 seeds). Directly attribute live controller latency and legitimate new-flow collapse across base OpenFlow handling, live feature extraction, synchronous batch=1 inference, and cooperative eventlet loop starvation.\n",
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "cpu_pinning": {
+      "enabled": true,
+      "controller_cores": "0",
+      "generator_cores": "1",
+      "ovs_cores": "2-7"
+    },
+    "dataset": {
+      "raw_csv": "data/raw/insdn/Dataset.csv",
+      "manifest_json": "data/manifests/insdn_manifest.json",
+      "train_seed": 42
+    },
+    "topology": {
+      "name": "minimal_two_switch",
+      "openflow_version": "OpenFlow13",
+      "flow_table_limit": 4096,
+      "overflow_policy": "refuse",
+      "flow_idle_timeout_s": 15,
+      "flow_hard_timeout_s": 30
+    },
+    "controller": {
+      "host": "127.0.0.1",
+      "ofp_port": 6653,
+      "telemetry_port": 18080,
+      "heartbeat_interval_ms": 50
+    },
+    "benign_traffic": {
+      "iperf3_protocol": "udp",
+      "iperf3_bitrate_mbps": 20,
+      "ping_interval_s": 0.2,
+      "new_flow_probe_hz": 2.0,
+      "new_flow_timeout_s": 2.0,
+      "echo_port": 8088
+    },
+    "load": {
+      "fixed_spoof_pps": 250,
+      "duration_s": 10.0,
+      "cooldown_s": 2.0,
+      "payload_bytes": 64,
+      "dst_port": 9999
+    },
+    "pipelines": [
+      {
+        "name": "Baseline_A_NoAI",
+        "extractor_mode": "none",
+        "tier": null,
+        "model": null
+      },
+      {
+        "name": "FeatsOnly_T1a_Light",
+        "extractor_mode": "t1a",
+        "tier": "T1a_Unidirectional_OF",
+        "model": null
+      },
+      {
+        "name": "FeatsOnly_T3_HeavyCIC",
+        "extractor_mode": "t3",
+        "tier": "T3_Full_CICFlowMeter",
+        "model": null
+      },
+      {
+        "name": "Baseline_B_T1a_LR",
+        "extractor_mode": "t1a",
+        "tier": "T1a_Unidirectional_OF",
+        "model": "logistic_regression"
+      },
+      {
+        "name": "Baseline_B_T1a_LGBM",
+        "extractor_mode": "t1a",
+        "tier": "T1a_Unidirectional_OF",
+        "model": "lightgbm"
+      },
+      {
+        "name": "Baseline_B_T1a_XGB",
+        "extractor_mode": "t1a",
+        "tier": "T1a_Unidirectional_OF",
+        "model": "xgboost"
+      },
+      {
+        "name": "Baseline_C_T1a_RF",
+        "extractor_mode": "t1a",
+        "tier": "T1a_Unidirectional_OF",
+        "model": "random_forest"
+      },
+      {
+        "name": "Baseline_C_T3_RF",
+        "extractor_mode": "t3",
+        "tier": "T3_Full_CICFlowMeter",
+        "model": "random_forest"
+      }
+    ],
+    "telemetry": {
+      "sample_interval_s": 0.5
+    }
+  },
+  "dataset": {
+    "name": "InSDN",
+    "sha256": "a93d51e1c2debc7246728578f22d84a442f156628be64b8c9bae5ccc5dd88a42"
+  },
+  "container_trained_offline_scores": {
+    "T1a_Unidirectional_OF__logistic_regression": {
+      "n_features": 6,
+      "train_time_s": 0.33,
+      "test_macro_f1": 0.86324,
+      "test_fpr": 0.29146,
+      "test_pr_auc": 0.88603
+    },
+    "T1a_Unidirectional_OF__lightgbm": {
+      "n_features": 6,
+      "train_time_s": 0.37,
+      "test_macro_f1": 0.96609,
+      "test_fpr": 0.04367,
+      "test_pr_auc": 0.99727
+    },
+    "T1a_Unidirectional_OF__xgboost": {
+      "n_features": 6,
+      "train_time_s": 0.39,
+      "test_macro_f1": 0.96552,
+      "test_fpr": 0.06416,
+      "test_pr_auc": 0.99695
+    },
+    "T1a_Unidirectional_OF__random_forest": {
+      "n_features": 6,
+      "train_time_s": 3.68,
+      "test_macro_f1": 0.96859,
+      "test_fpr": 0.04346,
+      "test_pr_auc": 0.99749
+    },
+    "T3_Full_CICFlowMeter__random_forest": {
+      "n_features": 65,
+      "train_time_s": 8.9,
+      "test_macro_f1": 0.99984,
+      "test_fpr": 0.00021,
+      "test_pr_auc": 1.0
+    }
+  },
+  "cpu_pinning_applied": {
+    "controller": true,
+    "ovs_vswitchd": true
+  },
+  "topology_runtime": {
+    "ovs_datapath": "user",
+    "flow_table_limit": 4096,
+    "overflow_policy": "refuse",
+    "openflow_version": "OpenFlow13",
+    "switches": [
+      "s1",
+      "s2"
+    ],
+    "hosts": {
+      "h_benign": {
+        "ip": "10.0.0.1/24",
+        "mac": "00:00:00:00:00:01"
+      },
+      "h_attacker": {
+        "ip": "10.0.0.2/24",
+        "mac": "00:00:00:00:00:02"
+      },
+      "h_server": {
+        "ip": "10.0.0.3/24",
+        "mac": "00:00:00:00:00:03"
+      }
+    }
+  },
+  "environment": {
+    "timestamp_utc": "2026-11-26T07:38:09.280985+00:00",
+    "platform": "Linux-5.15.153.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "kernel_release": "5.15.153.1-microsoft-standard-WSL2",
+    "machine": "x86_64",
+    "python_version": "3.10.12",
+    "cpu_count_logical": 16,
+    "ovs_version": "ovs-vsctl (Open vSwitch) 2.17.12",
+    "ovs_datapath_mode": "netdev",
+    "mininet_version": "2.3.0",
+    "os_ken_version": "2.11.0"
+  },
+  "pre_test_connectivity_loss_pct": 0.0,
+  "result_summary": "NoAI cpu=30.15% (ok=100.0%) | T1a+LGBM cpu=49.5633% (ok=100.0%, feat=0.0094ms, inf=0.4449ms) | T3+RF cpu=98.33% (ok=16.67%, feat=0.1716ms, inf=3.1184ms)",
+  "limitations": [
+    "Observe-only profiling (no active packet dropping) so every pipeline experiences identical Packet-In arrival load for unbiased component attribution; active mitigation evaluated in Phase 5.",
+    "OVS datapath mode: netdev userspace (isolated from controller via taskset core pinning).",
+    "InSDN models evaluated on live synthetic Mininet traffic experience offline-to-live domain shift (prediction totals logged transparently)."
+  ]
+}

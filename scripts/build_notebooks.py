@@ -372,6 +372,75 @@ base_t1a = df_exp6[(df_exp6["tier"] == "T1a_Unidirectional_OF") & (df_exp6["mode
 pd.concat([base_t1a, ab_df], ignore_index=True)
             """
         ),
+        _md(
+            """
+## 4. Live SDN Component Attribution (`EXP-0007`, Core-Pinned `os-ken`, 250 pps, $N=3$ Seeds)
+Direct microsecond breakdown of live `Packet-In` handling (`base_ofp` vs. `feature_extract` vs. `model_infer`) paired with Controller CPU % and Legitimate New-TCP Setup Success %.
+            """
+        ),
+        _code(
+            """
+df_exp7 = pd.read_csv(REPO_ROOT / "experiments" / "results" / "EXP-0007" / "aggregated_summary.csv")
+df_exp7[[
+    "pipeline", "offline_test_macro_f1", "base_ofp_p50_ms_mean",
+    "feature_extract_p50_ms_mean", "model_infer_p50_ms_mean",
+    "event_loop_lag_p95_ms_mean", "controller_cpu_mean_pct_mean",
+    "benign_new_flow_success_pct_mean"
+]]
+            """
+        ),
+        _code(
+            """
+fig, axes = plt.subplots(1, 2, figsize=(15, 5.2))
+
+short_labels = [
+    "NoAI\\n(Base A)", "Feats\\nT1a", "Feats\\nT3 CIC",
+    "T1a+LR\\n(Base B)", "T1a+LGBM\\n(Base B)", "T1a+XGB\\n(Base B)",
+    "T1a+RF\\n(Base C)", "T3+RF\\n(Base C)"
+]
+x = np.arange(len(df_exp7))
+
+# Panel A: Stacked component latency breakdown (p50 ms)
+base_v = df_exp7["base_ofp_p50_ms_mean"].to_numpy()
+feat_v = df_exp7["feature_extract_p50_ms_mean"].to_numpy()
+inf_v = df_exp7["model_infer_p50_ms_mean"].to_numpy()
+
+axes[0].bar(x, base_v, label="Base OpenFlow + Parsing", color="#64748b")
+axes[0].bar(x, feat_v, bottom=base_v, label="Live Feature Extraction", color="#f59e0b")
+axes[0].bar(x, inf_v, bottom=base_v + feat_v, label="Sync ML Inference (batch=1)", color="#dc2626")
+axes[0].axhline(1.0, color="#111827", linestyle="--", linewidth=1.6, label="EXP-0005 ~1.0 ms Sync Budget")
+axes[0].set_xticks(x)
+axes[0].set_xticklabels(short_labels, fontsize=8.5)
+axes[0].set_ylabel("Median Per-Packet-In Latency (ms)")
+axes[0].set_title("(a) Live os-ken Component Latency Breakdown (250 pps, N=3)")
+axes[0].legend(loc="upper left", fontsize=8.5, framealpha=0.95)
+
+# Panel B: Controller CPU (%) & Benign New-TCP Setup Success (%)
+w = 0.38
+axes[1].bar(
+    x - w/2, df_exp7["controller_cpu_mean_pct_mean"], width=w,
+    yerr=df_exp7["controller_cpu_mean_pct_ci95"], capsize=3,
+    color="#2563eb", label="Controller CPU Mean (%)"
+)
+axes[1].bar(
+    x + w/2, df_exp7["benign_new_flow_success_pct_mean"], width=w,
+    yerr=df_exp7["benign_new_flow_success_pct_ci95"], capsize=3,
+    color="#16a34a", label="Benign New-TCP Setup OK (%)"
+)
+axes[1].set_xticks(x)
+axes[1].set_xticklabels(short_labels, fontsize=8.5)
+axes[1].set_ylabel("Percentage (%)")
+axes[1].set_ylim(0, 118)
+axes[1].set_title("(b) Live Controller CPU vs. Legitimate New-Flow Survival (95% CI)")
+axes[1].legend(loc="upper center", ncol=2, fontsize=8.5, framealpha=0.95)
+
+plt.tight_layout()
+out_fig = FIG_DIR / "fig04_exp0007_live_component_attribution.png"
+plt.savefig(out_fig, dpi=220, bbox_inches="tight")
+print(f"Saved figure -> {out_fig}")
+plt.show()
+            """
+        ),
     ]
     out_path = NOTEBOOKS_DIR / "02_offline_vs_live_bottleneck_analysis.ipynb"
     out_path.parent.mkdir(parents=True, exist_ok=True)

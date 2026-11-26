@@ -74,6 +74,19 @@ All methodological, architectural, environmental, and scope decisions are logged
   1. Never claim `99.99%` `T2` accuracy without explicitly disclosing the `Init Bwd Win Byts` testbed shortcut; keep `T1a`/`T1b` (strictly OpenFlow-native counters) and live Mininet traffic evaluation central.
   2. In Phase 4B (`EXP-0007`), deploy `Baseline B` (`LightGBM` + `LogisticRegression` on native OpenFlow features) and `Baseline C` (`RandomForest` + synchronous multi-feature extraction) **live inside `os-ken`** to empirically test `H1` (feature extraction vs. inference vs. event-loop blocking) before building our Phase 5 decoupled micro-batched + Stage-1 gatekeeper defense.
 
+## DEC-011: `EXP-0007` Live Component Attribution — Refutation of Naive Feature-Extraction Assumption & Single-Packet Observability Blindness
+- **Date:** 2026-11-26
+- **Context:** Executed 24 core-pinned live trials (`N=3` seeds × 8 factorial pipelines) inside `ku-dsai-sdn:0.2` at `250 pps` spoofed table-miss flood (`~475–490 Packet-In/s`, `0` carryover).
+- **Three Major Empirical Findings:**
+  1. **Hypothesis `H1` Refined (Synchronous `batch=1` Inference Dominates Over Feature Extraction):** On `Baseline_C_T3_RF`, median handler time (`3.66 ms`) decomposed into `base_ofp = 0.35 ms` (`9.5%`), `T3 65-feature extraction = 0.17 ms` (`4.7%`), and **`batch=1` RF inference = `3.12 ms` (`85.2%`)**. Even for lightweight `T1a` (`0.010 ms` extraction), synchronous `batch=1` `LightGBM`/`XGBoost`/`LR` inference (`0.29–0.44 ms`) was `29×–44×` larger than extraction and added `+14%–20%` controller CPU at `250 pps`. Thus, feature pruning alone without removing synchronous `batch=1` inference from `_packet_in_handler` does NOT solve the bottleneck.
+  2. **Hypothesis `H2` Strongly Supported Live:** `T3+RF` (`99.98%` offline F1) and `T1a+RF` (`96.86%` offline F1) both saturated `os-ken` (`98.1%–98.3%` CPU), spiked `eventlet` loop lag `24×–29×` (`1.02 -> 24.6–29.5 ms`), dropped `45%` of `Packet-In` throughput, and collapsed legitimate new-TCP connection setup to **`16.7%–22.2%`**, whereas `T1a+LGBM`/`T1a+XGB` sustained `100.0%` setup success at `~49.5%` CPU at `250 pps`.
+  3. **Single-Packet `Packet-In` Observability Blindness:** Because spoofed table-miss floods arrive as isolated 1-packet flows (`Tot Fwd Pkts=1, Bwd=0, IAT_std=0`), offline `InSDN`-trained `T3+RF` (`99.98%` offline F1) classified `2,860–3,225` live attack `Packet-In`s as Normal and flagged only **`1`** (`0.03%` detection rate!).
+- **Decision for Phase 5:** Design the proposed defense directly from these three measured mechanisms:
+  - **Stage 1 (O(1) In-Controller Fast Gate + Flow-Table Guard):** Zero ML inside `_packet_in_handler`; tracks sliding-window aggregate OpenFlow telemetry (`Packet-In` rate, unique `src_ip` ratio, `dst_ip` concentration, single-packet flow ratio, flow-table occupancy proxy).
+  - **Stage 2 (Decoupled Out-of-Process Worker on a Separate CPU Core):** Runs micro-batched / windowed lightweight ML off the `eventlet` loop + GIL to separate spoofed DDoS floods from legitimate flash crowds and pushes targeted OpenFlow mitigation rules back asynchronously.
+  - Evaluate strictly one variable at a time against `Baseline A`, `Baseline B (Sync LGBM)`, and `Baseline C (Sync RF)` across both moderate (`250 pps`) and high (`600–1000 pps`) flood loads + legitimate flash-crowd scenarios!
+
+
 
 
 
