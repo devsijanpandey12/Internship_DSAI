@@ -25,9 +25,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     util-linux \
     git \
     curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Pin compatible Python tooling for os-ken + telemetry + packet generation
+# Pin compatible Python tooling for os-ken + telemetry + packet generation + live ML baselines
 RUN python3 -m pip install --upgrade "pip<25" "setuptools<70" wheel && \
     python3 -m pip install \
       "os-ken==2.11.0" \
@@ -38,6 +39,10 @@ RUN python3 -m pip install --upgrade "pip<25" "setuptools<70" wheel && \
       "numpy==1.26.4" \
       "pandas==2.2.2" \
       "scipy==1.13.1" \
+      "scikit-learn==1.5.2" \
+      "lightgbm==4.5.0" \
+      "xgboost==2.1.1" \
+      "joblib==1.4.2" \
       "pytest==8.2.2"
 
 WORKDIR /workspace

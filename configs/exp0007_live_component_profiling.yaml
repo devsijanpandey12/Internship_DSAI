@@ -1,0 +1,88 @@
+experiment_id: "EXP-0007"
+hypothesis_id: "H1+H2"
+phase: "Phase 4B - Live SDN Component Attribution (Baseline A vs B vs C)"
+objective: >
+  Deploy real InSDN-trained lightweight (LR, LightGBM, XGBoost) and heavy (Random Forest)
+  models alongside live T1a (6-feature O(1) OpenFlow) and T3 (65-feature CIC-style)
+  extractors synchronously inside core-pinned os-ken at 250 pps spoofed table-miss load
+  (~500 Packet-In/s across s1+s2, N=3 seeds). Directly attribute live controller latency
+  and legitimate new-flow collapse across base OpenFlow handling, live feature extraction,
+  synchronous batch=1 inference, and cooperative eventlet loop starvation.
+seeds: [42, 43, 44]
+
+cpu_pinning:
+  enabled: true
+  controller_cores: "0"
+  generator_cores: "1"
+  ovs_cores: "2-7"
+
+dataset:
+  raw_csv: "data/raw/insdn/Dataset.csv"
+  manifest_json: "data/manifests/insdn_manifest.json"
+  train_seed: 42
+
+topology:
+  name: "minimal_two_switch"
+  openflow_version: "OpenFlow13"
+  flow_table_limit: 4096
+  overflow_policy: "refuse"
+  flow_idle_timeout_s: 15
+  flow_hard_timeout_s: 30
+
+controller:
+  host: "127.0.0.1"
+  ofp_port: 6653
+  telemetry_port: 18080
+  heartbeat_interval_ms: 50
+
+benign_traffic:
+  iperf3_protocol: "udp"
+  iperf3_bitrate_mbps: 20
+  ping_interval_s: 0.2
+  new_flow_probe_hz: 2.0
+  new_flow_timeout_s: 2.0
+  echo_port: 8088
+
+load:
+  fixed_spoof_pps: 250
+  duration_s: 10.0
+  cooldown_s: 2.0
+  payload_bytes: 64
+  dst_port: 9999
+
+pipelines:
+  - name: "Baseline_A_NoAI"
+    extractor_mode: "none"
+    tier: null
+    model: null
+  - name: "FeatsOnly_T1a_Light"
+    extractor_mode: "t1a"
+    tier: "T1a_Unidirectional_OF"
+    model: null
+  - name: "FeatsOnly_T3_HeavyCIC"
+    extractor_mode: "t3"
+    tier: "T3_Full_CICFlowMeter"
+    model: null
+  - name: "Baseline_B_T1a_LR"
+    extractor_mode: "t1a"
+    tier: "T1a_Unidirectional_OF"
+    model: "logistic_regression"
+  - name: "Baseline_B_T1a_LGBM"
+    extractor_mode: "t1a"
+    tier: "T1a_Unidirectional_OF"
+    model: "lightgbm"
+  - name: "Baseline_B_T1a_XGB"
+    extractor_mode: "t1a"
+    tier: "T1a_Unidirectional_OF"
+    model: "xgboost"
+  - name: "Baseline_C_T1a_RF"
+    extractor_mode: "t1a"
+    tier: "T1a_Unidirectional_OF"
+    model: "random_forest"
+  - name: "Baseline_C_T3_RF"
+    extractor_mode: "t3"
+    tier: "T3_Full_CICFlowMeter"
+    model: "random_forest"
+
+telemetry:
+  sample_interval_s: 0.5
