@@ -58,6 +58,12 @@ All methodological, architectural, environmental, and scope decisions are logged
 - **Context:** In `EXP-0004`, Trials 1–5 (`0.00 -> 2.00 ms`) executed cleanly and revealed a sharp saturation cliff at `2.00 ms` (`ctrl_cpu=97.6%`, `event_loop_lag_p95=34.68 ms`, `new_flow_ok=50.0%`). Immediately after Trial 5, our zero-flow assertion caught `8` residual dynamic flows on `s1` because `flush_dynamic_flows()` ran *before* `cooldown_s` while `os-ken`'s saturated socket buffer was still emitting the last in-flight `OFPFlowMod` messages from Trial 5.
 - **Decision:** Preserve `EXP-0004` permanently, reset `inject_cpu_ms = 0.0`, sleep `cooldown_s`, wait for `packet_in_total` quiescence (zero new `Packet-In`s over 0.3 s), and *then* run `flush_dynamic_flows()` + zero-flow assertion before each trial in **`EXP-0005`**.
 
+## DEC-009: Hybrid Engineering Standard — Tested `.py` Core + Interactive `.ipynb` Analysis Notebooks
+- **Date:** 2026-11-26
+- **Context:** User asked whether using `.ipynb` notebooks would be better for the ML/data pipeline.
+- **Technical Critique:** Notebooks excel at interactive EDA, leakage inspection, and generating paper-ready visuals for weekly supervisor meetings, **but** putting core data-cleaning, training, or SDN code solely inside `.ipynb` files breaks automated `pytest` verification, risks hidden-state/out-of-order execution bugs, creates noisy Git diffs, and cannot be imported directly into `osken-manager` or automated multi-seed Mininet runners.
+- **Decision:** Keep all data loading, deduplication, observability-tier feature mapping, model training, serialization, and live SDN controllers in tested, config-driven `.py` modules under `src/` and `scripts/`. Pair them with clean, executed `.ipynb` notebooks under `notebooks/` that import `src/` and visualize saved `experiments/results/` CSV/JSON artifacts.
+
 
 
 

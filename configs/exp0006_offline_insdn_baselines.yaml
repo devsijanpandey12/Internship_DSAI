@@ -1,0 +1,44 @@
+experiment_id: "EXP-0006"
+hypothesis_id: "H2"
+phase: "Phase 4A - Offline InSDN Leakage-Free Baselines & Observability Tiers"
+objective: >
+  Benchmark five ML/DL baseline families (Logistic Regression, LightGBM, XGBoost,
+  Random Forest, MLP) on strictly leakage-free, deduplicated InSDN splits across four
+  SDN observability tiers (T1a Unidirectional OpenFlow -> T1b Bidirectional OpenFlow ->
+  T2 Header/Flags -> T3 Full CICFlowMeter), measuring both classification quality
+  (Macro F1, FPR, PR-AUC, per-attack recall) and single-sample (batch=1) vs.
+  micro-batched (batch=64) single-thread CPU inference latency against EXP-0005's
+  empirical 1.0 ms synchronous controller ceiling.
+seed: 42
+
+dataset:
+  name: "InSDN"
+  raw_csv: "data/raw/insdn/Dataset.csv"
+  manifest_json: "data/manifests/insdn_manifest.json"
+  deduplicate_features: true
+  include_dst_port: false
+  dst_port_ablation: true
+  split_ratios:
+    train: 0.70
+    val: 0.15
+    test: 0.15
+
+tiers:
+  - "T1a_Unidirectional_OF"
+  - "T1b_Bidirectional_OF"
+  - "T2_Header_Flags"
+  - "T3_Full_CICFlowMeter"
+
+models:
+  - "logistic_regression"
+  - "lightgbm"
+  - "xgboost"
+  - "random_forest"
+  - "mlp"
+
+latency_benchmark:
+  n_single: 1000
+  batch_size: 64
+  n_batches: 200
+  warmup: 50
+  exp0005_sync_budget_ms: 1.0
