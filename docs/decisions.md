@@ -64,6 +64,17 @@ All methodological, architectural, environmental, and scope decisions are logged
 - **Technical Critique:** Notebooks excel at interactive EDA, leakage inspection, and generating paper-ready visuals for weekly supervisor meetings, **but** putting core data-cleaning, training, or SDN code solely inside `.ipynb` files breaks automated `pytest` verification, risks hidden-state/out-of-order execution bugs, creates noisy Git diffs, and cannot be imported directly into `osken-manager` or automated multi-seed Mininet runners.
 - **Decision:** Keep all data loading, deduplication, observability-tier feature mapping, model training, serialization, and live SDN controllers in tested, config-driven `.py` modules under `src/` and `scripts/`. Pair them with clean, executed `.ipynb` notebooks under `notebooks/` that import `src/` and visualize saved `experiments/results/` CSV/JSON artifacts.
 
+## DEC-010: `EXP-0006` Findings — `Init Bwd Win Byts` Shortcut & Per-Call `batch=1` Dispatch Bottleneck
+- **Date:** 2026-11-26
+- **Context:** `EXP-0006` benchmarked 5 model families (`LogisticRegression`, `LightGBM`, `XGBoost`, `RandomForest`, `MLP`) across 4 observability tiers on deduplicated, leakage-stripped `InSDN` (`184,746` unique rows after removing `125,252` feature duplicates = `36.4%`).
+- **Two Critical Findings:**
+  1. **Hidden Lab-Stack Fingerprint (`Init Bwd Win Byts`):** Feature-importance auditing of `T2_Header_Flags` (`0.9999` F1, `0.01%` FPR vs. `0.9785` F1, `2.85%` FPR on `T1b`) revealed `Init Bwd Win Byts` as the #1 feature (`importance=404`), acting as a testbed OS/VM TCP receive-window fingerprint alongside the `Dst Port` shortcut (`+Dst Port` artificially jumped `T1a` LightGBM from `0.9661` F1 / `4.37%` FPR to `0.9979` F1 / `0.12%` FPR).
+  2. **Per-Call Dispatch Overhead Dominates `batch=1` Inference:** Single-sample (`batch=1`) CPU inference for `LightGBM` (`0.52–0.59 ms` p50, `0.75–1.03 ms` p95) and `RandomForest` (`5.50–7.01 ms` p50, `7.01–9.43 ms` p95) was virtually invariant to feature count (`6` vs `65` features!), whereas micro-batching (`batch=64`) reduced per-flow latency by **32x–63x** (`0.003–0.114 ms/flow`).
+- **Decision:**
+  1. Never claim `99.99%` `T2` accuracy without explicitly disclosing the `Init Bwd Win Byts` testbed shortcut; keep `T1a`/`T1b` (strictly OpenFlow-native counters) and live Mininet traffic evaluation central.
+  2. In Phase 4B (`EXP-0007`), deploy `Baseline B` (`LightGBM` + `LogisticRegression` on native OpenFlow features) and `Baseline C` (`RandomForest` + synchronous multi-feature extraction) **live inside `os-ken`** to empirically test `H1` (feature extraction vs. inference vs. event-loop blocking) before building our Phase 5 decoupled micro-batched + Stage-1 gatekeeper defense.
+
+
 
 
 
