@@ -133,19 +133,20 @@ def build_minimal_network(
 def flush_dynamic_flows(
     switches: list[str] | tuple[str, ...] = ("s1", "s2"),
     openflow_version: str = "OpenFlow13",
-    dynamic_cookie: str = "0x10/-1",
+    dynamic_cookies: tuple[str, ...] = ("0x10/-1", "0x20/-1"),
 ) -> None:
-    """Remove all dynamic controller-installed rules (cookie=0x10) while preserving priority=0 table-miss.
+    """Remove all dynamic forwarding (0x10) and mitigation (0x20) rules while preserving table-miss (0x0).
 
     Strictly asserts zero remaining dynamic flows on every switch to prevent silent cross-phase carryover.
     """
     for sw in switches:
-        subprocess.run(
-            ["ovs-ofctl", "-O", openflow_version, "del-flows", sw, f"cookie={dynamic_cookie}"],
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-        )
+        for cookie_mask in dynamic_cookies:
+            subprocess.run(
+                ["ovs-ofctl", "-O", openflow_version, "del-flows", sw, f"cookie={cookie_mask}"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
         remaining = get_dynamic_flow_count(sw, openflow_version)
         if remaining != 0:
             raise RuntimeError(f"Flow flush failed on {sw}: {remaining} dynamic flows still present")

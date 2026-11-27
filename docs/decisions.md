@@ -86,6 +86,15 @@ All methodological, architectural, environmental, and scope decisions are logged
   - **Stage 2 (Decoupled Out-of-Process Worker on a Separate CPU Core):** Runs micro-batched / windowed lightweight ML off the `eventlet` loop + GIL to separate spoofed DDoS floods from legitimate flash crowds and pushes targeted OpenFlow mitigation rules back asynchronously.
   - Evaluate strictly one variable at a time against `Baseline A`, `Baseline B (Sync LGBM)`, and `Baseline C (Sync RF)` across both moderate (`250 pps`) and high (`600–1000 pps`) flood loads + legitimate flash-crowd scenarios!
 
+## DEC-012: Pre-Registered Phase 5 Primary Metrics, Ablation Matrix (`A0–A4`), and Flash-Crowd Control
+- **Date:** 2026-11-27
+- **Context:** Before implementing Phase 5 defenses, we pre-register the exact evaluation protocol and success criteria (Section 13) to prevent post-hoc metric shopping or naive-threshold cheating.
+- **Decision:**
+  1. **Windowed OpenFlow Feature Representation (10 IP-value-agnostic features per 250 ms `(dpid, in_port)` window):** `packet_in_rate_pps`, `unique_src_ip_ratio`, `src_ip_entropy_norm`, `unique_src_port_ratio`, `dst_ip_concentration`, `udp_ratio`, `tcp_syn_only_ratio`, `tcp_ack_or_est_ratio`, `pkt_len_mean`, `pkt_len_std`. Trained on live multi-regime Mininet telemetry (`EXP-0008`: steady benign, benign TCP flash crowds, variable-length spoofed UDP floods, spoofed TCP SYN floods) using strictly disjoint Train vs. Test seeds.
+  2. **5-Architecture Single-Variable Ablation (`EXP-0009`):** `A0_Baseline_NoAI`, `A1_Sync_Light_LGBM`, `A2_Decoupled_Async_WindowML`, `A3_TwoStage_Gate_Decoupled_TableGuard`, and `A4_Static_Rate_Threshold` evaluated under BOTH `800 pps` spoofed flood AND `60 conn/s` legitimate TCP flash crowd (`N=3` core-pinned seeds; `N=5` in Phase 6 final validation).
+  3. **Locked Success Criteria:** `A3` must simultaneously (a) keep benign new-TCP survival `>= 95%` and controller CPU `< 30%` under `800 pps` flood, (b) keep `s1` flow-table occupancy strictly below `A2` with `0` `TABLE_FULL` refusals, and (c) preserve `>= 95%` legitimate completion during benign flash crowds where `A4` fails.
+
+
 
 
 

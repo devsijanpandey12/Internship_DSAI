@@ -1,0 +1,73 @@
+experiment_id: "EXP-0008"
+hypothesis_id: "H3a+H3c"
+phase: "Phase 5A - Live Multi-Regime Windowed Telemetry Collection & Stage-2 Classifier Training"
+objective: >
+  Collect live 250 ms OpenFlow per-port window telemetry across five realistic traffic regimes
+  (steady benign, benign TCP flash crowds at 40 & 80 conn/s, variable-payload spoofed UDP floods,
+  and spoofed TCP SYN floods) over strictly disjoint training seeds [101, 102] and held-out test
+  seeds [201, 202]. Train and evaluate the 10-feature IP/port-agnostic Stage-2 LightGBM classifier
+  against Logistic Regression and a naive Static Rate Threshold baseline, explicitly measuring
+  Flash-Crowd False Positive Rate and Cross-Protocol Attack Recall.
+train_seeds: [101, 102]
+test_seeds: [201, 202]
+
+cpu_pinning:
+  enabled: true
+  controller_cores: "0"
+  generator_cores: "1"
+  ovs_cores: "2-7"
+
+topology:
+  name: "minimal_two_switch"
+  openflow_version: "OpenFlow13"
+  flow_table_limit: 4096
+  overflow_policy: "refuse"
+  flow_idle_timeout_s: 15
+  flow_hard_timeout_s: 30
+
+controller:
+  host: "127.0.0.1"
+  ofp_port: 6653
+  telemetry_port: 18080
+  window_interval_ms: 250
+  heartbeat_interval_ms: 50
+  edge_ports:
+    1: [1, 2]
+
+collection:
+  phase_duration_s: 8.0
+  cooldown_s: 1.5
+  echo_port: 8088
+  static_gate_pps: 30.0
+  regimes:
+    - name: "benign_steady"
+      label: 0
+      kind: "benign_steady"
+    - name: "benign_flash_40hz"
+      label: 0
+      kind: "flash_crowd"
+      rate_hz: 40
+    - name: "benign_flash_80hz"
+      label: 0
+      kind: "flash_crowd"
+      rate_hz: 80
+    - name: "attack_spoof_udp_150pps"
+      label: 1
+      kind: "spoof_udp"
+      rate_pps: 150
+      min_payload_bytes: 32
+      max_payload_bytes: 512
+    - name: "attack_spoof_udp_500pps"
+      label: 1
+      kind: "spoof_udp"
+      rate_pps: 500
+      min_payload_bytes: 32
+      max_payload_bytes: 512
+    - name: "attack_spoof_syn_150pps"
+      label: 1
+      kind: "spoof_syn"
+      rate_pps: 150
+    - name: "attack_spoof_syn_500pps"
+      label: 1
+      kind: "spoof_syn"
+      rate_pps: 500
