@@ -1,0 +1,4 @@
+model,test_macro_f1,test_fpr_all_benign,test_fpr_flash_crowd,test_recall_udp_flood,test_recall_syn_flood
+Static_Rate_Threshold(>=30pps),0.62573,0.70621,0.93985,1.0,0.98462
+Window_LogisticRegression,1.0,0.0,0.0,1.0,1.0
+Stage2_Window_LightGBM,1.0,0.0,0.0,1.0,1.0

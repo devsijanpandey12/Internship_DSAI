@@ -1,0 +1,173 @@
+{
+  "experiment_id": "EXP-0008",
+  "timestamp_utc": "2026-11-27T18:04:49.983679+00:00",
+  "status": "SUCCESS",
+  "failure_reason": "",
+  "phase": "Phase 5A - Live Multi-Regime Windowed Telemetry Collection & Stage-2 Classifier Training",
+  "hypothesis_id": "H3a+H3c",
+  "objective": "Collect live 250 ms OpenFlow per-port window telemetry across five realistic traffic regimes (steady benign, benign TCP flash crowds at 40 & 80 conn/s, variable-payload spoofed UDP floods, and spoofed TCP SYN floods) over strictly disjoint training seeds [101, 102] and held-out test seeds [201, 202]. Train and evaluate the 10-feature IP/port-agnostic Stage-2 LightGBM classifier against Logistic Regression and a naive Static Rate Threshold baseline, explicitly measuring Flash-Crowd False Positive Rate and Cross-Protocol Attack Recall.",
+  "git": {
+    "commit": "8ded0f415515ab6bef04e12baf3705ccfa953dcc",
+    "dirty": false
+  },
+  "config_path": "configs/exp0008_window_telemetry.yaml",
+  "config_sha256": "916c682aa199db77e633e6a34e439da912bf632bd14cd655984592dd981dafa8",
+  "config": {
+    "experiment_id": "EXP-0008",
+    "hypothesis_id": "H3a+H3c",
+    "phase": "Phase 5A - Live Multi-Regime Windowed Telemetry Collection & Stage-2 Classifier Training",
+    "objective": "Collect live 250 ms OpenFlow per-port window telemetry across five realistic traffic regimes (steady benign, benign TCP flash crowds at 40 & 80 conn/s, variable-payload spoofed UDP floods, and spoofed TCP SYN floods) over strictly disjoint training seeds [101, 102] and held-out test seeds [201, 202]. Train and evaluate the 10-feature IP/port-agnostic Stage-2 LightGBM classifier against Logistic Regression and a naive Static Rate Threshold baseline, explicitly measuring Flash-Crowd False Positive Rate and Cross-Protocol Attack Recall.\n",
+    "train_seeds": [
+      101,
+      102
+    ],
+    "test_seeds": [
+      201,
+      202
+    ],
+    "cpu_pinning": {
+      "enabled": true,
+      "controller_cores": "0",
+      "generator_cores": "1",
+      "ovs_cores": "2-7"
+    },
+    "topology": {
+      "name": "minimal_two_switch",
+      "openflow_version": "OpenFlow13",
+      "flow_table_limit": 4096,
+      "overflow_policy": "refuse",
+      "flow_idle_timeout_s": 15,
+      "flow_hard_timeout_s": 30
+    },
+    "controller": {
+      "host": "127.0.0.1",
+      "ofp_port": 6653,
+      "telemetry_port": 18080,
+      "window_interval_ms": 250,
+      "heartbeat_interval_ms": 50,
+      "edge_ports": {
+        "1": [
+          1,
+          2
+        ]
+      }
+    },
+    "collection": {
+      "phase_duration_s": 8.0,
+      "cooldown_s": 1.5,
+      "echo_port": 8088,
+      "static_gate_pps": 30.0,
+      "regimes": [
+        {
+          "name": "benign_steady",
+          "label": 0,
+          "kind": "benign_steady"
+        },
+        {
+          "name": "benign_flash_40hz",
+          "label": 0,
+          "kind": "flash_crowd",
+          "rate_hz": 40
+        },
+        {
+          "name": "benign_flash_80hz",
+          "label": 0,
+          "kind": "flash_crowd",
+          "rate_hz": 80
+        },
+        {
+          "name": "attack_spoof_udp_150pps",
+          "label": 1,
+          "kind": "spoof_udp",
+          "rate_pps": 150,
+          "min_payload_bytes": 32,
+          "max_payload_bytes": 512
+        },
+        {
+          "name": "attack_spoof_udp_500pps",
+          "label": 1,
+          "kind": "spoof_udp",
+          "rate_pps": 500,
+          "min_payload_bytes": 32,
+          "max_payload_bytes": 512
+        },
+        {
+          "name": "attack_spoof_syn_150pps",
+          "label": 1,
+          "kind": "spoof_syn",
+          "rate_pps": 150
+        },
+        {
+          "name": "attack_spoof_syn_500pps",
+          "label": 1,
+          "kind": "spoof_syn",
+          "rate_pps": 500
+        }
+      ]
+    }
+  },
+  "windows_collected_total": 873,
+  "evaluation_summary": [
+    {
+      "model": "Static_Rate_Threshold(>=30pps)",
+      "test_macro_f1": 0.62573,
+      "test_fpr_all_benign": 0.70621,
+      "test_fpr_flash_crowd": 0.93985,
+      "test_recall_udp_flood": 1.0,
+      "test_recall_syn_flood": 0.98462
+    },
+    {
+      "model": "Window_LogisticRegression",
+      "test_macro_f1": 1.0,
+      "test_fpr_all_benign": 0.0,
+      "test_fpr_flash_crowd": 0.0,
+      "test_recall_udp_flood": 1.0,
+      "test_recall_syn_flood": 1.0
+    },
+    {
+      "model": "Stage2_Window_LightGBM",
+      "test_macro_f1": 1.0,
+      "test_fpr_all_benign": 0.0,
+      "test_fpr_flash_crowd": 0.0,
+      "test_recall_udp_flood": 1.0,
+      "test_recall_syn_flood": 1.0
+    }
+  ],
+  "topology_runtime": {
+    "ovs_datapath": "user",
+    "flow_table_limit": 4096,
+    "overflow_policy": "refuse",
+    "openflow_version": "OpenFlow13",
+    "switches": [
+      "s1",
+      "s2"
+    ],
+    "hosts": {
+      "h_benign": {
+        "ip": "10.0.0.1/24",
+        "mac": "00:00:00:00:00:01"
+      },
+      "h_attacker": {
+        "ip": "10.0.0.2/24",
+        "mac": "00:00:00:00:00:02"
+      },
+      "h_server": {
+        "ip": "10.0.0.3/24",
+        "mac": "00:00:00:00:00:03"
+      }
+    }
+  },
+  "environment": {
+    "timestamp_utc": "2026-11-27T18:04:49.983679+00:00",
+    "platform": "Linux-5.15.153.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "kernel_release": "5.15.153.1-microsoft-standard-WSL2",
+    "machine": "x86_64",
+    "python_version": "3.10.12",
+    "cpu_count_logical": 16,
+    "ovs_version": "ovs-vsctl (Open vSwitch) 2.17.12",
+    "ovs_datapath_mode": "netdev",
+    "mininet_version": "2.3.0",
+    "os_ken_version": "2.11.0"
+  },
+  "result_summary": "StaticRate(>=30pps): F1=0.62573, FlashCrowd_FPR=94.0% | Stage2_Window_LGBM: F1=1.0, FlashCrowd_FPR=0.0%, UDP_Rec=100.0%, SYN_Rec=100.0%"
+}
