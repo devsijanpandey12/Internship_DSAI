@@ -94,6 +94,12 @@ All methodological, architectural, environmental, and scope decisions are logged
   2. **5-Architecture Single-Variable Ablation (`EXP-0009`):** `A0_Baseline_NoAI`, `A1_Sync_Light_LGBM`, `A2_Decoupled_Async_WindowML`, `A3_TwoStage_Gate_Decoupled_TableGuard`, and `A4_Static_Rate_Threshold` evaluated under BOTH `800 pps` spoofed flood AND `60 conn/s` legitimate TCP flash crowd (`N=3` core-pinned seeds; `N=5` in Phase 6 final validation).
   3. **Locked Success Criteria:** `A3` must simultaneously (a) keep benign new-TCP survival `>= 95%` and controller CPU `< 30%` under `800 pps` flood, (b) keep `s1` flow-table occupancy strictly below `A2` with `0` `TABLE_FULL` refusals, and (c) preserve `>= 95%` legitimate completion during benign flash crowds where `A4` fails.
 
+## DEC-013: `EXP-0009` Trial 25 Collateral `iperf3` Timeout Under `A4` -> Upgrade to `EXP-0010` (`N=5`, 3 Scenarios)
+- **Date:** 2026-11-27
+- **Context:** `EXP-0009` completed Trials 1–24 cleanly (proving `H3a`, `H3b`, `H3c` across all 15 flood trials and 9 flash-crowd trials), then timed out on Trial 25 (`benign_flash_crowd_60hz`, `A4_Static_Rate_Threshold`) because `A4` falsely installed TCP drop rules on `h_benign` (`s1:p1`), killing `iperf3`'s TCP control teardown socket!
+- **Decision:** Preserve `EXP-0009` permanently as `FAILED` (with all 24 completed trials archived). Update runner to catch `TimeoutExpired` on benign probes cleanly (recording `goodput_mbps = 0.0` under false-mitigation kill rather than aborting), add cross-protocol `spoof_syn_800pps`, and scale to **`N = 5` unseen seeds** (`EXP-0010`, 75 trials) so Mann-Whitney U nonparametric tests can establish statistical significance at `p < 0.01` (`min p = 0.0079`).
+
+
 
 
 

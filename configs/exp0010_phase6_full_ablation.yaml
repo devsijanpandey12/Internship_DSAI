@@ -1,0 +1,76 @@
+experiment_id: "EXP-0010"
+hypothesis_id: "H3a+H3b+H3c"
+phase: "Phase 5/6 - Full Statistical Single-Variable Ablation (N=5 Seeds, UDP + SYN Floods + Flash Crowd)"
+objective: >
+  Full 75-trial (N=5 unseen seeds x 3 scenarios x 5 controlled architectures) core-pinned
+  comparative evaluation and single-variable ablation across an 800 pps spoofed UDP flood,
+  an 800 pps spoofed TCP SYN flood, and a 60 conn/s legitimate TCP flash crowd, enabling
+  nonparametric Mann-Whitney U significance testing at alpha=0.01 (min p=0.0079 for N=5)
+  with graceful handling of collateral iperf3 control-socket timeouts under A4 false drops.
+seeds: [301, 302, 303, 304, 305]
+
+cpu_pinning:
+  enabled: true
+  controller_cores: "0"
+  generator_cores: "1"
+  ovs_cores: "2-7"
+  worker_core: 8
+
+models:
+  sync_t1a_lgbm_path: "experiments/artifacts/EXP-0007/models/T1a_Unidirectional_OF__lightgbm.joblib"
+  stage2_window_lgbm_path: "experiments/artifacts/EXP-0008/stage2_window_lgbm.joblib"
+
+topology:
+  name: "minimal_two_switch"
+  openflow_version: "OpenFlow13"
+  flow_table_limit: 4096
+  overflow_policy: "refuse"
+  flow_idle_timeout_s: 15
+  flow_hard_timeout_s: 30
+
+controller:
+  host: "127.0.0.1"
+  ofp_port: 6653
+  telemetry_port: 18080
+  window_interval_ms: 250
+  heartbeat_interval_ms: 50
+  gate_pps: 30.0
+  mitigation_hard_timeout_s: 5
+  edge_ports:
+    1: [1, 2]
+
+benign_traffic:
+  iperf3_bitrate_mbps: 20
+  ping_interval_s: 0.2
+  new_flow_probe_hz: 2.0
+  new_flow_timeout_s: 2.0
+  echo_port: 8088
+
+scenarios:
+  - name: "spoof_udp_800pps"
+    kind: "spoof_udp"
+    rate_pps: 800
+    min_payload_bytes: 32
+    max_payload_bytes: 512
+    duration_s: 10.0
+    cooldown_s: 1.5
+  - name: "spoof_syn_800pps"
+    kind: "spoof_syn"
+    rate_pps: 800
+    duration_s: 10.0
+    cooldown_s: 1.5
+  - name: "benign_flash_crowd_60hz"
+    kind: "flash_crowd"
+    rate_hz: 60
+    duration_s: 10.0
+    cooldown_s: 1.5
+
+architectures:
+  - "A0_Baseline_NoAI"
+  - "A1_Sync_Light_LGBM"
+  - "A2_Decoupled_Async_WindowML"
+  - "A3_TwoStage_Gate_Decoupled_TableGuard"
+  - "A4_Static_Rate_Threshold"
+
+telemetry:
+  sample_interval_s: 0.5

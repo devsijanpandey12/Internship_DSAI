@@ -257,7 +257,7 @@ def run_experiment(config_path: Path) -> None:
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                     )
 
-                    if skind == "spoof_udp":
+                    if skind in ("spoof_udp", "spoof_syn"):
                         probe_p = h_benign.popen(
                             [
                                 "python3", str(REPO_ROOT / "src" / "evaluation" / "traffic_gen.py"), "new_flow_probe",
@@ -267,15 +267,24 @@ def run_experiment(config_path: Path) -> None:
                             ],
                             env=controller_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                         )
-                        gen_cmd = [
-                            "python3", str(REPO_ROOT / "src" / "evaluation" / "traffic_gen.py"), "spoof_udp",
-                            "--iface", attacker_iface, "--src-mac", attacker_mac, "--dst-mac", server_mac,
-                            "--dst-ip", server_ip, "--dst-port", "9999",
-                            "--rate-pps", str(scen["rate_pps"]), "--duration", str(dur_s),
-                            "--min-payload-bytes", str(scen["min_payload_bytes"]),
-                            "--max-payload-bytes", str(scen["max_payload_bytes"]),
-                            "--seed", str(trial_seed),
-                        ]
+                        if skind == "spoof_udp":
+                            gen_cmd = [
+                                "python3", str(REPO_ROOT / "src" / "evaluation" / "traffic_gen.py"), "spoof_udp",
+                                "--iface", attacker_iface, "--src-mac", attacker_mac, "--dst-mac", server_mac,
+                                "--dst-ip", server_ip, "--dst-port", "9999",
+                                "--rate-pps", str(scen["rate_pps"]), "--duration", str(dur_s),
+                                "--min-payload-bytes", str(scen["min_payload_bytes"]),
+                                "--max-payload-bytes", str(scen["max_payload_bytes"]),
+                                "--seed", str(trial_seed),
+                            ]
+                        else:
+                            gen_cmd = [
+                                "python3", str(REPO_ROOT / "src" / "evaluation" / "traffic_gen.py"), "spoof_syn",
+                                "--iface", attacker_iface, "--src-mac", attacker_mac, "--dst-mac", server_mac,
+                                "--dst-ip", server_ip, "--dst-port", str(benign_cfg["echo_port"]),
+                                "--rate-pps", str(scen["rate_pps"]), "--duration", str(dur_s),
+                                "--seed", str(trial_seed),
+                            ]
                         if pin_cfg.get("enabled"):
                             gen_cmd = ["taskset", "-c", str(pin_cfg["generator_cores"]), *gen_cmd]
                         gen_holder["proc"] = h_attacker.popen(gen_cmd, env=controller_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -291,18 +300,48 @@ def run_experiment(config_path: Path) -> None:
                             env=controller_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                         )
 
-                    iperf_out, _ = iperf_p.communicate(timeout=dur_s + 25)
-                    ping_out, _ = ping_p.communicate(timeout=dur_s + 25)
-                    probe_out, _ = probe_p.communicate(timeout=dur_s + 25)
+                    iperf_timed_out = False
+                    try:
+                        iperf_out, _ = iperf_p.communicate(timeout=dur_s + 8)
+                    except subprocess.TimeoutExpired:
+                        iperf_timed_out = True
+                        iperf_p.kill()
+                        iperf_out, _ = iperf_p.communicate()
+                        # Restart iperf3 server cleanly so a half-open socket blocked by A4 never stalls next trial
+                        try:
+                            iperf_srv.kill()
+                            iperf_srv.wait(timeout=2)
+                        except Exception:
+                            pass
+                        iperf_srv = h_server.popen(["iperf3", "-s"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        time.sleep(0.3)
+                    try:
+                        ping_out, _ = ping_p.communicate(timeout=dur_s + 8)
+                    except subprocess.TimeoutExpired:
+                        ping_p.kill()
+                        ping_out, _ = ping_p.communicate()
+                    try:
+                        probe_out, _ = probe_p.communicate(timeout=dur_s + 12)
+                    except subprocess.TimeoutExpired:
+                        probe_p.kill()
+                        probe_out, _ = probe_p.communicate()
                     if gen_holder["proc"] is not None:
-                        gen_holder["proc"].communicate(timeout=dur_s + 25)
+                        try:
+                            gen_holder["proc"].communicate(timeout=dur_s + 10)
+                        except subprocess.TimeoutExpired:
+                            gen_holder["proc"].kill()
+                            gen_holder["proc"].communicate()
 
                     stop_mon.set()
                     mon_t.join(timeout=3.0)
                     wmon_t.join(timeout=3.0)
 
                     ctrl_snap = rpc_call(ctrl_cfg["host"], int(ctrl_cfg["telemetry_port"]), {"cmd": "snapshot_phase"}, timeout=25.0)["snapshot"]
-                    iperf_stats = parse_iperf3_json(iperf_out, protocol="udp")
+                    iperf_stats = (
+                        {"ok": False, "goodput_mbps": 0.0, "error": "timeout_control_blocked"}
+                        if iperf_timed_out
+                        else parse_iperf3_json(iperf_out, protocol="udp")
+                    )
                     ping_stats = parse_ping_output(ping_out)
                     probe_stats = json.loads(probe_out.strip().splitlines()[-1]) if probe_out.strip() else {
                         "success_rate_pct": 0.0, "setup_latency_ms": summarize_distribution([])
@@ -382,13 +421,23 @@ def run_experiment(config_path: Path) -> None:
                     agg[f"{metric}_ci95"] = round(ci, 3) if ci is not None else None
                 agg_rows.append(agg)
 
-        # Pairwise Mann-Whitney U checks for key hypotheses
-        pairs = [
-            ("spoof_flood_800pps", "A3_TwoStage_Gate_Decoupled_TableGuard", "A1_Sync_Light_LGBM", "controller_cpu_mean_pct"),
-            ("spoof_flood_800pps", "A3_TwoStage_Gate_Decoupled_TableGuard", "A1_Sync_Light_LGBM", "benign_tcp_success_pct"),
-            ("spoof_flood_800pps", "A3_TwoStage_Gate_Decoupled_TableGuard", "A2_Decoupled_Async_WindowML", "s1_flow_table_occupancy_pct"),
-            ("benign_flash_crowd_60hz", "A3_TwoStage_Gate_Decoupled_TableGuard", "A4_Static_Rate_Threshold", "benign_tcp_success_pct"),
-        ]
+        # Pairwise Mann-Whitney U checks across all flood & flash-crowd scenarios
+        pairs = []
+        for scen in scenarios:
+            sn = str(scen["name"])
+            if scen["kind"] in ("spoof_udp", "spoof_syn"):
+                pairs.extend([
+                    (sn, "A3_TwoStage_Gate_Decoupled_TableGuard", "A1_Sync_Light_LGBM", "controller_cpu_mean_pct"),
+                    (sn, "A3_TwoStage_Gate_Decoupled_TableGuard", "A1_Sync_Light_LGBM", "benign_tcp_success_pct"),
+                    (sn, "A3_TwoStage_Gate_Decoupled_TableGuard", "A1_Sync_Light_LGBM", "event_loop_lag_p95_ms"),
+                    (sn, "A3_TwoStage_Gate_Decoupled_TableGuard", "A2_Decoupled_Async_WindowML", "s1_flow_table_occupancy_pct"),
+                    (sn, "A3_TwoStage_Gate_Decoupled_TableGuard", "A0_Baseline_NoAI", "controller_cpu_mean_pct"),
+                ])
+            else:
+                pairs.extend([
+                    (sn, "A3_TwoStage_Gate_Decoupled_TableGuard", "A4_Static_Rate_Threshold", "benign_tcp_success_pct"),
+                    (sn, "A3_TwoStage_Gate_Decoupled_TableGuard", "A4_Static_Rate_Threshold", "false_mitigations_benign_port"),
+                ])
         for sname, a_prop, a_base, metric in pairs:
             v1 = [r[metric] for r in trial_rows if r["scenario"] == sname and r["architecture"] == a_prop and r[metric] is not None]
             v2 = [r[metric] for r in trial_rows if r["scenario"] == sname and r["architecture"] == a_base and r[metric] is not None]
@@ -446,9 +495,9 @@ def run_experiment(config_path: Path) -> None:
     primary_summary = "FAILED"
     if agg_rows:
         idx = {(r["scenario"], r["architecture"]): r for r in agg_rows}
-        a1f = idx.get(("spoof_flood_800pps", "A1_Sync_Light_LGBM"), {})
-        a2f = idx.get(("spoof_flood_800pps", "A2_Decoupled_Async_WindowML"), {})
-        a3f = idx.get(("spoof_flood_800pps", "A3_TwoStage_Gate_Decoupled_TableGuard"), {})
+        a1f = idx.get(("spoof_udp_800pps", "A1_Sync_Light_LGBM")) or idx.get(("spoof_flood_800pps", "A1_Sync_Light_LGBM"), {})
+        a2f = idx.get(("spoof_udp_800pps", "A2_Decoupled_Async_WindowML")) or idx.get(("spoof_flood_800pps", "A2_Decoupled_Async_WindowML"), {})
+        a3f = idx.get(("spoof_udp_800pps", "A3_TwoStage_Gate_Decoupled_TableGuard")) or idx.get(("spoof_flood_800pps", "A3_TwoStage_Gate_Decoupled_TableGuard"), {})
         a3c = idx.get(("benign_flash_crowd_60hz", "A3_TwoStage_Gate_Decoupled_TableGuard"), {})
         a4c = idx.get(("benign_flash_crowd_60hz", "A4_Static_Rate_Threshold"), {})
         primary_summary = (
