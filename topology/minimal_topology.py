@@ -134,22 +134,35 @@ def flush_dynamic_flows(
     switches: list[str] | tuple[str, ...] = ("s1", "s2"),
     openflow_version: str = "OpenFlow13",
     dynamic_cookies: tuple[str, ...] = ("0x10/-1", "0x20/-1"),
+    max_retries: int = 6,
 ) -> None:
     """Remove all dynamic forwarding (0x10) and mitigation (0x20) rules while preserving table-miss (0x0).
 
-    Strictly asserts zero remaining dynamic flows on every switch to prevent silent cross-phase carryover.
+    Retries briefly if lingering Linux TCP FIN/RST retransmissions arrive during deletion,
+    then strictly asserts zero remaining dynamic flows on every switch to prevent carryover.
     """
-    for sw in switches:
-        for cookie_mask in dynamic_cookies:
-            subprocess.run(
-                ["ovs-ofctl", "-O", openflow_version, "del-flows", sw, f"cookie={cookie_mask}"],
-                check=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-            )
-        remaining = get_dynamic_flow_count(sw, openflow_version)
-        if remaining != 0:
-            raise RuntimeError(f"Flow flush failed on {sw}: {remaining} dynamic flows still present")
+    import time
+
+    for attempt in range(max_retries):
+        all_zero = True
+        remaining_map: dict[str, int] = {}
+        for sw in switches:
+            for cookie_mask in dynamic_cookies:
+                subprocess.run(
+                    ["ovs-ofctl", "-O", openflow_version, "del-flows", sw, f"cookie={cookie_mask}"],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                )
+            rem = get_dynamic_flow_count(sw, openflow_version)
+            remaining_map[sw] = rem
+            if rem != 0:
+                all_zero = False
+        if all_zero:
+            return
+        if attempt < max_retries - 1:
+            time.sleep(0.5)
+    raise RuntimeError(f"Flow flush failed after {max_retries} attempts: {remaining_map}")
 
 
 def get_dynamic_flow_count(switch_name: str, openflow_version: str = "OpenFlow13") -> int:
