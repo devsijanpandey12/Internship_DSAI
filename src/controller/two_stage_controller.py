@@ -476,7 +476,11 @@ class TwoStageDefenseSwitch13(app_manager.OSKenApp):
                 cur_cnt = self.port_burst_count_current.get(key, 0) + 1
                 self.port_burst_count_current[key] = cur_cnt
                 burst_thresh_pkts = max(3, int(self.gate_pps * self.window_interval_s))
-                if cur_cnt >= burst_thresh_pkts and key not in self.port_first_burst_ns:
+                if (
+                    cur_cnt >= burst_thresh_pkts
+                    and key not in self.port_first_burst_ns
+                    and time.monotonic() >= self.port_mitigated_until.get(key, 0.0)
+                ):
                     self.port_first_burst_ns[key] = t0
 
                 # A3 Selective Flow-Table Guard: while a port bursts above gate_pps and has NOT

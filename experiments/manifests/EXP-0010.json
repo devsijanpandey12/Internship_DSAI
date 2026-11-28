@@ -1,0 +1,10 @@
+{
+  "experiment_id": "EXP-0010",
+  "timestamp_utc": "2026-11-27T18:18:54+00:00",
+  "status": "INTERRUPTED_HOST_SLEEP",
+  "failure_reason": "Host/server restart interrupted background Docker run at Trial 21/75 (Trials 1-20 completed cleanly in task log).",
+  "phase": "Phase 5/6 - Full Statistical Single-Variable Ablation (N=5 Seeds, UDP + SYN Floods + Flash Crowd)",
+  "hypothesis_id": "H3a+H3b+H3c",
+  "config_path": "configs/exp0010_phase6_full_ablation.yaml",
+  "notes": "Preserved per non-overwrite policy; superseded by EXP-0011 with stale post-mitigation burst-timestamp guard."
+}
