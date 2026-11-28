@@ -1,0 +1,122 @@
+[
+  {
+    "scenario": "spoof_udp_800pps",
+    "metric": "controller_cpu_mean_pct",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A1_Sync_Light_LGBM",
+    "proposed_mean": 5.132,
+    "baseline_mean": 97.52,
+    "mann_whitney_u": 0.0,
+    "p_value": 0.01193
+  },
+  {
+    "scenario": "spoof_udp_800pps",
+    "metric": "benign_tcp_success_pct",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A1_Sync_Light_LGBM",
+    "proposed_mean": 100.0,
+    "baseline_mean": 79.958,
+    "mann_whitney_u": 25.0,
+    "p_value": 0.00669
+  },
+  {
+    "scenario": "spoof_udp_800pps",
+    "metric": "event_loop_lag_p95_ms",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A1_Sync_Light_LGBM",
+    "proposed_mean": 0.861,
+    "baseline_mean": 10.594,
+    "mann_whitney_u": 0.0,
+    "p_value": 0.00794
+  },
+  {
+    "scenario": "spoof_udp_800pps",
+    "metric": "s1_flow_table_occupancy_pct",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A2_Decoupled_Async_WindowML",
+    "proposed_mean": 1.47,
+    "baseline_mean": 16.322,
+    "mann_whitney_u": 0.0,
+    "p_value": 0.0097
+  },
+  {
+    "scenario": "spoof_udp_800pps",
+    "metric": "controller_cpu_mean_pct",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A0_Baseline_NoAI",
+    "proposed_mean": 5.132,
+    "baseline_mean": 73.676,
+    "mann_whitney_u": 0.0,
+    "p_value": 0.00794
+  },
+  {
+    "scenario": "spoof_syn_800pps",
+    "metric": "controller_cpu_mean_pct",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A1_Sync_Light_LGBM",
+    "proposed_mean": 4.422,
+    "baseline_mean": 96.838,
+    "mann_whitney_u": 0.0,
+    "p_value": 0.01193
+  },
+  {
+    "scenario": "spoof_syn_800pps",
+    "metric": "benign_tcp_success_pct",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A1_Sync_Light_LGBM",
+    "proposed_mean": 100.0,
+    "baseline_mean": 95.716,
+    "mann_whitney_u": 20.0,
+    "p_value": 0.0668
+  },
+  {
+    "scenario": "spoof_syn_800pps",
+    "metric": "event_loop_lag_p95_ms",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A1_Sync_Light_LGBM",
+    "proposed_mean": 0.893,
+    "baseline_mean": 9.744,
+    "mann_whitney_u": 0.0,
+    "p_value": 0.00794
+  },
+  {
+    "scenario": "spoof_syn_800pps",
+    "metric": "s1_flow_table_occupancy_pct",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A2_Decoupled_Async_WindowML",
+    "proposed_mean": 1.44,
+    "baseline_mean": 17.384,
+    "mann_whitney_u": 0.0,
+    "p_value": 0.00749
+  },
+  {
+    "scenario": "spoof_syn_800pps",
+    "metric": "controller_cpu_mean_pct",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A0_Baseline_NoAI",
+    "proposed_mean": 4.422,
+    "baseline_mean": 71.44,
+    "mann_whitney_u": 0.0,
+    "p_value": 0.01193
+  },
+  {
+    "scenario": "benign_flash_crowd_60hz",
+    "metric": "benign_tcp_success_pct",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A4_Static_Rate_Threshold",
+    "proposed_mean": 100.0,
+    "baseline_mean": 60.968,
+    "mann_whitney_u": 25.0,
+    "p_value": 0.00749
+  },
+  {
+    "scenario": "benign_flash_crowd_60hz",
+    "metric": "false_mitigations_benign_port",
+    "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+    "baseline": "A4_Static_Rate_Threshold",
+    "proposed_mean": 0.0,
+    "baseline_mean": 4.0,
+    "mann_whitney_u": 0.0,
+    "p_value": 0.00398
+  }
+]

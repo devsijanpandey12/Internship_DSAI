@@ -1,0 +1,268 @@
+{
+  "experiment_id": "EXP-0012",
+  "timestamp_utc": "2026-11-28T06:07:41.439617+00:00",
+  "status": "SUCCESS",
+  "failure_reason": "",
+  "phase": "Phase 6 - Complete Statistical Single-Variable Ablation (N=5 Seeds, UDP + SYN Floods + Flash Crowd)",
+  "hypothesis_id": "H3a+H3b+H3c",
+  "objective": "Complete 75-trial (N=5 unseen seeds x 3 scenarios x 5 controlled architectures) core-pinned comparative evaluation and single-variable ablation across an 800 pps spoofed UDP flood, an 800 pps spoofed TCP SYN flood, and a 60 conn/s legitimate TCP flash crowd (with retry-guarded zero-carryover flow flushing absorbing residual TCP FIN/RST retries after A4 false drops).",
+  "git": {
+    "commit": "92c821f6dce98a2ab2ef542738d1b511542f5471",
+    "dirty": true
+  },
+  "config_path": "configs/exp0012_phase6_full_ablation.yaml",
+  "config_sha256": "a3fd6d5370c23e04a8119708b9fe7c41417d97365f4d0a8e5b94ad2d8532bab0",
+  "config": {
+    "experiment_id": "EXP-0012",
+    "hypothesis_id": "H3a+H3b+H3c",
+    "phase": "Phase 6 - Complete Statistical Single-Variable Ablation (N=5 Seeds, UDP + SYN Floods + Flash Crowd)",
+    "objective": "Complete 75-trial (N=5 unseen seeds x 3 scenarios x 5 controlled architectures) core-pinned comparative evaluation and single-variable ablation across an 800 pps spoofed UDP flood, an 800 pps spoofed TCP SYN flood, and a 60 conn/s legitimate TCP flash crowd (with retry-guarded zero-carryover flow flushing absorbing residual TCP FIN/RST retries after A4 false drops).\n",
+    "seeds": [
+      301,
+      302,
+      303,
+      304,
+      305
+    ],
+    "cpu_pinning": {
+      "enabled": true,
+      "controller_cores": "0",
+      "generator_cores": "1",
+      "ovs_cores": "2-7",
+      "worker_core": 8
+    },
+    "models": {
+      "sync_t1a_lgbm_path": "experiments/artifacts/EXP-0007/models/T1a_Unidirectional_OF__lightgbm.joblib",
+      "stage2_window_lgbm_path": "experiments/artifacts/EXP-0008/stage2_window_lgbm.joblib"
+    },
+    "topology": {
+      "name": "minimal_two_switch",
+      "openflow_version": "OpenFlow13",
+      "flow_table_limit": 4096,
+      "overflow_policy": "refuse",
+      "flow_idle_timeout_s": 15,
+      "flow_hard_timeout_s": 30
+    },
+    "controller": {
+      "host": "127.0.0.1",
+      "ofp_port": 6653,
+      "telemetry_port": 18080,
+      "window_interval_ms": 250,
+      "heartbeat_interval_ms": 50,
+      "gate_pps": 30.0,
+      "mitigation_hard_timeout_s": 5,
+      "edge_ports": {
+        "1": [
+          1,
+          2
+        ]
+      }
+    },
+    "benign_traffic": {
+      "iperf3_bitrate_mbps": 20,
+      "ping_interval_s": 0.2,
+      "new_flow_probe_hz": 2.0,
+      "new_flow_timeout_s": 2.0,
+      "echo_port": 8088
+    },
+    "scenarios": [
+      {
+        "name": "spoof_udp_800pps",
+        "kind": "spoof_udp",
+        "rate_pps": 800,
+        "min_payload_bytes": 32,
+        "max_payload_bytes": 512,
+        "duration_s": 10.0,
+        "cooldown_s": 1.5
+      },
+      {
+        "name": "spoof_syn_800pps",
+        "kind": "spoof_syn",
+        "rate_pps": 800,
+        "duration_s": 10.0,
+        "cooldown_s": 1.5
+      },
+      {
+        "name": "benign_flash_crowd_60hz",
+        "kind": "flash_crowd",
+        "rate_hz": 60,
+        "duration_s": 10.0,
+        "cooldown_s": 2.0
+      }
+    ],
+    "architectures": [
+      "A0_Baseline_NoAI",
+      "A1_Sync_Light_LGBM",
+      "A2_Decoupled_Async_WindowML",
+      "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "A4_Static_Rate_Threshold"
+    ],
+    "telemetry": {
+      "sample_interval_s": 0.5
+    }
+  },
+  "cpu_pinning_applied": {
+    "controller": true,
+    "ovs_vswitchd": true,
+    "worker_core": 8
+  },
+  "statistical_tests": [
+    {
+      "scenario": "spoof_udp_800pps",
+      "metric": "controller_cpu_mean_pct",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A1_Sync_Light_LGBM",
+      "proposed_mean": 5.132,
+      "baseline_mean": 97.52,
+      "mann_whitney_u": 0.0,
+      "p_value": 0.01193
+    },
+    {
+      "scenario": "spoof_udp_800pps",
+      "metric": "benign_tcp_success_pct",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A1_Sync_Light_LGBM",
+      "proposed_mean": 100.0,
+      "baseline_mean": 79.958,
+      "mann_whitney_u": 25.0,
+      "p_value": 0.00669
+    },
+    {
+      "scenario": "spoof_udp_800pps",
+      "metric": "event_loop_lag_p95_ms",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A1_Sync_Light_LGBM",
+      "proposed_mean": 0.861,
+      "baseline_mean": 10.594,
+      "mann_whitney_u": 0.0,
+      "p_value": 0.00794
+    },
+    {
+      "scenario": "spoof_udp_800pps",
+      "metric": "s1_flow_table_occupancy_pct",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A2_Decoupled_Async_WindowML",
+      "proposed_mean": 1.47,
+      "baseline_mean": 16.322,
+      "mann_whitney_u": 0.0,
+      "p_value": 0.0097
+    },
+    {
+      "scenario": "spoof_udp_800pps",
+      "metric": "controller_cpu_mean_pct",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A0_Baseline_NoAI",
+      "proposed_mean": 5.132,
+      "baseline_mean": 73.676,
+      "mann_whitney_u": 0.0,
+      "p_value": 0.00794
+    },
+    {
+      "scenario": "spoof_syn_800pps",
+      "metric": "controller_cpu_mean_pct",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A1_Sync_Light_LGBM",
+      "proposed_mean": 4.422,
+      "baseline_mean": 96.838,
+      "mann_whitney_u": 0.0,
+      "p_value": 0.01193
+    },
+    {
+      "scenario": "spoof_syn_800pps",
+      "metric": "benign_tcp_success_pct",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A1_Sync_Light_LGBM",
+      "proposed_mean": 100.0,
+      "baseline_mean": 95.716,
+      "mann_whitney_u": 20.0,
+      "p_value": 0.0668
+    },
+    {
+      "scenario": "spoof_syn_800pps",
+      "metric": "event_loop_lag_p95_ms",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A1_Sync_Light_LGBM",
+      "proposed_mean": 0.893,
+      "baseline_mean": 9.744,
+      "mann_whitney_u": 0.0,
+      "p_value": 0.00794
+    },
+    {
+      "scenario": "spoof_syn_800pps",
+      "metric": "s1_flow_table_occupancy_pct",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A2_Decoupled_Async_WindowML",
+      "proposed_mean": 1.44,
+      "baseline_mean": 17.384,
+      "mann_whitney_u": 0.0,
+      "p_value": 0.00749
+    },
+    {
+      "scenario": "spoof_syn_800pps",
+      "metric": "controller_cpu_mean_pct",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A0_Baseline_NoAI",
+      "proposed_mean": 4.422,
+      "baseline_mean": 71.44,
+      "mann_whitney_u": 0.0,
+      "p_value": 0.01193
+    },
+    {
+      "scenario": "benign_flash_crowd_60hz",
+      "metric": "benign_tcp_success_pct",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A4_Static_Rate_Threshold",
+      "proposed_mean": 100.0,
+      "baseline_mean": 60.968,
+      "mann_whitney_u": 25.0,
+      "p_value": 0.00749
+    },
+    {
+      "scenario": "benign_flash_crowd_60hz",
+      "metric": "false_mitigations_benign_port",
+      "proposed": "A3_TwoStage_Gate_Decoupled_TableGuard",
+      "baseline": "A4_Static_Rate_Threshold",
+      "proposed_mean": 0.0,
+      "baseline_mean": 4.0,
+      "mann_whitney_u": 0.0,
+      "p_value": 0.00398
+    }
+  ],
+  "topology_runtime": {
+    "ovs_datapath": "user",
+    "flow_table_limit": 4096,
+    "overflow_policy": "refuse",
+    "openflow_version": "OpenFlow13",
+    "switches": [
+      "s1",
+      "s2"
+    ],
+    "hosts": {
+      "h_benign": {
+        "ip": "10.0.0.1/24",
+        "mac": "00:00:00:00:00:01"
+      },
+      "h_attacker": {
+        "ip": "10.0.0.2/24",
+        "mac": "00:00:00:00:00:02"
+      },
+      "h_server": {
+        "ip": "10.0.0.3/24",
+        "mac": "00:00:00:00:00:03"
+      }
+    }
+  },
+  "environment": {
+    "timestamp_utc": "2026-11-28T06:07:41.439617+00:00",
+    "platform": "Linux-5.15.153.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "kernel_release": "5.15.153.1-microsoft-standard-WSL2",
+    "machine": "x86_64",
+    "python_version": "3.10.12",
+    "cpu_count_logical": 16,
+    "ovs_version": "ovs-vsctl (Open vSwitch) 2.17.12",
+    "ovs_datapath_mode": "netdev",
+    "mininet_version": "2.3.0",
+    "os_ken_version": "2.11.0"
+  },
+  "result_summary": "Flood800: A1_cpu=97.52%/ok=79.958% vs A2_occ=16.322% vs A3_cpu=5.132%/occ=1.47%/ok=100.0% | Flash60Hz: A4_ok=60.968% vs A3_ok=100.0%"
+}

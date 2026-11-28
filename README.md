@@ -45,6 +45,18 @@ research/
 ## Core Principles
 
 1. **Measure before assuming:** Isolate base controller/switch overhead (Baseline A) before adding feature extraction or AI models.
-2. **Never overwrite results:** Every run gets an immutable Experiment ID (`EXP-XXXX`) with manifest, git commit hash, seed, environment snapshot, and raw metrics.
-3. **Preserve negative results:** Failed runs and unsupported hypotheses are logged and analyzed, never deleted.
+2. **Never overwrite results:** Every run gets an immutable Experiment ID (`EXP-0001`–`EXP-0012`) with manifest, git commit hash, seed, environment snapshot, and raw metrics.
+3. **Preserve negative results:** Failed, invalid, and interrupted runs (`EXP-0001`, `0003`, `0004`, `0009`, `0010`, `0011`) are archived and root-caused, never deleted.
 4. **Honest instrumentation:** In Open vSwitch software switches, flow-table occupancy is reported as a configured software flow-table capacity proxy (`flow_limit`), never misrepresented as physical hardware TCAM.
+
+## Key Deliverables & Reproduction
+
+- **Paper-Ready Experimental Report:** `paper/experimental_report.md`
+- **IEEE Conference Manuscript Draft & Verified BibTeX:** `paper/manuscript_draft.tex`, `paper/references.bib` (16 verified studies / 18 BibTeX entries with DOIs)
+- **Executed Analysis Notebooks:** `notebooks/01_insdn_leakage_audit_and_eda.ipynb`, `notebooks/02_offline_vs_live_bottleneck_analysis.ipynb`, `notebooks/03_phase6_ablation_and_paper_figures.ipynb`
+- **Paper Figures (Generated Strictly from Saved CSVs/JSONs):** `figures/fig01`–`figures/fig06`
+- **Quick Verification:**
+  ```bash
+  pytest -v tests/
+  python scripts/verify_reproducibility.py
+  ```

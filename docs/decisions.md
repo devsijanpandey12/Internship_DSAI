@@ -99,6 +99,15 @@ All methodological, architectural, environmental, and scope decisions are logged
 - **Context:** `EXP-0009` completed Trials 1–24 cleanly (proving `H3a`, `H3b`, `H3c` across all 15 flood trials and 9 flash-crowd trials), then timed out on Trial 25 (`benign_flash_crowd_60hz`, `A4_Static_Rate_Threshold`) because `A4` falsely installed TCP drop rules on `h_benign` (`s1:p1`), killing `iperf3`'s TCP control teardown socket!
 - **Decision:** Preserve `EXP-0009` permanently as `FAILED` (with all 24 completed trials archived). Update runner to catch `TimeoutExpired` on benign probes cleanly (recording `goodput_mbps = 0.0` under false-mitigation kill rather than aborting), add cross-protocol `spoof_syn_800pps`, and scale to **`N = 5` unseen seeds** (`EXP-0010`, 75 trials) so Mann-Whitney U nonparametric tests can establish statistical significance at `p < 0.01` (`min p = 0.0079`).
 
+## DEC-014: Complete Phase 6 Statistical Validation (`EXP-0012`, 75/75 Trials) & Honest Threats to Validity
+- **Date:** 2026-11-28
+- **Context:** After archiving interrupted `EXP-0010` (host sleep) and `EXP-0011` (post-`A4` TCP `FIN`/`RST` retry during flow flush), `EXP-0012` completed all 75/75 core-pinned trials (`N=5` unseen seeds `[301..305]` × 3 scenarios × 5 architectures) with zero carryover and full Mann-Whitney U significance tests.
+- **Evidence Summary:**
+  - `H3a`, `H3b`, and `H3c` are all empirically supported (`p <= 0.012` across CPU, event-loop lag, `s1` flow-table occupancy vs. `A2`, UDP benign TCP survival, and flash-crowd survival/false-mitigation rate vs. `A4`).
+  - Honest nuance logged: under `spoof_syn_800pps`, `A1`'s binary benign new-TCP success rate averaged `95.7%` (vs. `100.0%` for `A3`, `p = 0.0668`), while `A1`'s benign TCP setup p95 latency still exploded `108x` (`1,793.5 ms` vs. `16.6 ms` in `A3`) and controller CPU hit `96.8%` (`p = 0.0119`).
+  - Remaining pre-submission experimental requirement: replicate `EXP-0007` and `EXP-0012` on a **native Ubuntu Linux machine with kernel `openvswitch.ko` and `TCLink` bandwidth/delay shaping** once DSAI Lab compute is allocated, and expand flash-crowd testing to distributed multi-IP benign client pools.
+
+
 
 
 
